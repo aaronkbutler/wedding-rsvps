@@ -42,6 +42,8 @@ function apiPost(payload) {
 function resetSections() {
   optionsSection.classList.add('hidden');
   rsvpSection.classList.add('hidden');
+  rsvpForm.classList.remove('hidden');
+  submitButton.disabled = false;
   optionsList.innerHTML = '';
   guestsContainer.innerHTML = '';
   setMessage(submitMessage, '');
@@ -245,12 +247,16 @@ async function handleSubmit(evt) {
     const result = await apiPost(payload);
     if (result.error) {
       setMessage(submitMessage, result.error, 'error');
+      submitButton.disabled = false;
       return;
     }
-    setMessage(submitMessage, 'Thank you! Your RSVP has been recorded.', 'success');
+    rsvpForm.classList.add('hidden');
+    const thankYouText = result.websitePassword
+      ? `Thank you! Your RSVP has been recorded. Your wedding website password is: ${result.websitePassword}`
+      : 'Thank you! Your RSVP has been recorded.';
+    setMessage(submitMessage, thankYouText, 'success');
   } catch (err) {
     setMessage(submitMessage, 'Something went wrong submitting your RSVP. Please try again later.', 'error');
-  } finally {
     submitButton.disabled = false;
   }
 }

@@ -10,6 +10,10 @@
 // The two meal options offered to every guest. Edit as needed.
 var MEAL_OPTIONS = ['Chicken', 'Vegetarian'];
 
+// Password shown to guests after they submit their RSVP, so they can access
+// the wedding website. Edit as needed.
+var WEBSITE_PASSWORD = 'REPLACE_WITH_WEBSITE_PASSWORD';
+
 var GUESTS_SHEET_NAME = 'Guests';
 var RESPONSES_SHEET_NAME = 'Responses';
 
@@ -57,7 +61,7 @@ function doPost(e) {
   try {
     var payload = JSON.parse(e.postData.contents);
     submitRsvp(payload);
-    return jsonResponse({ success: true });
+    return jsonResponse({ success: true, websitePassword: WEBSITE_PASSWORD });
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
   }
