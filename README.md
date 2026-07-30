@@ -47,6 +47,10 @@ One row per invitation (household), covering one or more people:
   event and is assumed by default unless a different number is filled in.
   You can add more events to this "0 means everyone" list by editing
   `EVENTS_WHERE_ZERO_MEANS_EVERYONE` in `Code.gs`.
+- If you need extra columns after the event columns for your own
+  bookkeeping (e.g. `Zip Code`, `Invitation`), they won't be treated as
+  events as long as their header is listed (case-insensitively) in
+  `GUEST_LIST_NON_EVENT_COLUMNS` in `Code.gs`.
 
 ### `Responses` tab
 
