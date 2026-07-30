@@ -258,12 +258,12 @@ async function handleSubmit(evt) {
       return;
     }
     rsvpForm.classList.add('hidden');
-    const thankYouText = result.websitePassword
-      ? `Thank you! Your RSVP has been recorded. Your wedding website password is: ${result.websitePassword}`
+    lastWebsitePassword = determinePassword(guests);
+    const thankYouText = lastWebsitePassword
+      ? `Thank you! Your RSVP has been recorded. Your wedding website password is: ${lastWebsitePassword}`
       : 'Thank you! Your RSVP has been recorded.';
     setMessage(submitMessage, thankYouText, 'success');
     showRsvpSummary(guests);
-    lastWebsitePassword = result.websitePassword || null;
     continueButton.classList.remove('hidden');
   } catch (err) {
     setMessage(submitMessage, 'Something went wrong submitting your RSVP. Please try again later.', 'error');
@@ -304,6 +304,25 @@ function showRsvpSummary(guests) {
   });
 
   rsvpSummary.classList.remove('hidden');
+}
+
+function determinePassword(guests) {
+  // Check which events any guest is attending.
+  let attendingFriday = false;
+  let attendingSaturday = false;
+
+  guests.forEach((guest) => {
+    Object.entries(guest.rsvps).forEach(([eventName, response]) => {
+      if (response !== 'Attending') return;
+      const lower = eventName.toLowerCase();
+      if (lower.includes('friday')) attendingFriday = true;
+      if (lower.includes('saturday')) attendingSaturday = true;
+    });
+  });
+
+  if (attendingFriday) return 'shippinguptoboston';
+  if (attendingSaturday) return 'wearefamily';
+  return 'beantown';
 }
 
 function handleContinue() {
