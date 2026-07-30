@@ -22,19 +22,31 @@ Create a new Google Sheet with two tabs:
 
 ### `Guests` tab
 
-| GuestID | InvitationGroup                | GuestName     | Welcome Party | Ceremony & Reception |
-|---------|---------------------------------|---------------|---------------|-----------------------|
-| 1       | Raquel Cohen and Aaron Butler    | Raquel Cohen  | TRUE          | TRUE                  |
-| 2       | Raquel Cohen and Aaron Butler    | Aaron Butler  | TRUE          | TRUE                  |
-| 3       | The Smith Family                 | Jane Smith    | FALSE         | TRUE                  |
+One row per invitation (household), covering one or more people:
 
-- `GuestID` must be unique per guest (row).
-- `InvitationGroup` should be identical for everyone on the same invitation
-  — this is what ties Raquel and Aaron together.
-- Add one column per event after `GuestName`. Column headers become the
-  event names shown to guests. Use `TRUE`/`FALSE` to control who is invited
-  to what. You can add or rename event columns at any time without touching
-  the code.
+| First Names      | Last Names          | Count | Fri night | Saturday | Sunday |
+|-------------------|----------------------|-------|-----------|----------|--------|
+| Raquel and Aaron  | Cohen and Butler     | 2     | 2         | 2        | 2      |
+| Jane              | Smith                | 1     | 0         | 1        | 1      |
+
+- **First Names**: everyone's first name on the invitation, joined with
+  `and` (or commas), e.g. `Sharyn and Kenny`.
+- **Second column** (title it however you like, e.g. the couple's own last
+  names): last name(s) for the row. If there's a single last name, it's
+  applied to everyone in the row (e.g. `Susan and Philip` / `Ben-Zvi` ->
+  "Susan Ben-Zvi" and "Philip Ben-Zvi"). If there are multiple last names,
+  they're paired positionally with the first names in the same order (e.g.
+  `Sharyn and Kenny` / `Ben-Zvi and Unger` -> "Sharyn Ben-Zvi" and "Kenny
+  Unger" — never a cross-product, so it won't also produce "Sharyn Unger").
+- **Count**: total number of people on the invitation.
+- Add one column per event after `Count`. Column headers become the event
+  names shown to guests. Each cell holds the number of people from that row
+  attending/invited to that event (`0` means nobody from the row).
+- **Special case**: a `0` in the **Sunday** column means everyone on the
+  invitation (the `Count` value) is invited/attending — Sunday is the main
+  event and is assumed by default unless a different number is filled in.
+  You can add more events to this "0 means everyone" list by editing
+  `EVENTS_WHERE_ZERO_MEANS_EVERYONE` in `Code.gs`.
 
 ### `Responses` tab
 
