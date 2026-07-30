@@ -15,8 +15,10 @@ const rsvpForm = document.getElementById('rsvp-form');
 const messageInput = document.getElementById('message-input');
 const submitButton = document.getElementById('submit-button');
 const submitMessage = document.getElementById('submit-message');
+const continueButton = document.getElementById('continue-button');
 
 let currentInvitation = null;
+let lastWebsitePassword = null;
 
 function setMessage(el, text, type) {
   el.textContent = text || '';
@@ -47,6 +49,8 @@ function resetSections() {
   optionsList.innerHTML = '';
   guestsContainer.innerHTML = '';
   setMessage(submitMessage, '');
+  continueButton.classList.add('hidden');
+  lastWebsitePassword = null;
 }
 
 async function handleSearch() {
@@ -255,6 +259,10 @@ async function handleSubmit(evt) {
       ? `Thank you! Your RSVP has been recorded. Your wedding website password is: ${result.websitePassword}`
       : 'Thank you! Your RSVP has been recorded.';
     setMessage(submitMessage, thankYouText, 'success');
+    if (result.websitePassword) {
+      lastWebsitePassword = result.websitePassword;
+      continueButton.classList.remove('hidden');
+    }
   } catch (err) {
     setMessage(submitMessage, 'Something went wrong submitting your RSVP. Please try again later.', 'error');
     submitButton.disabled = false;
@@ -265,8 +273,23 @@ function cssEscape(value) {
   return window.CSS && CSS.escape ? CSS.escape(value) : value.replace(/["\\]/g, '\\$&');
 }
 
+function handleContinue() {
+  // This widget is embedded in Wix via an HTML iframe element, so it can't
+  // call Velo (site) code directly. Instead it posts a message to the
+  // parent window; the Wix page code must listen for it with
+  // $w('#htmlElementId').onMessage(...) and call submitPassword() itself.
+  // See README.md "Embed in Wix" for the corresponding Velo snippet.
+  if (window.parent) {
+    window.parent.postMessage(
+      { type: 'wedding-rsvp-continue', websitePassword: lastWebsitePassword },
+      '*'
+    );
+  }
+}
+
 searchButton.addEventListener('click', handleSearch);
 nameInput.addEventListener('keydown', (evt) => {
   if (evt.key === 'Enter') handleSearch();
 });
 rsvpForm.addEventListener('submit', handleSubmit);
+continueButton.addEventListener('click', handleContinue);
