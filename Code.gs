@@ -22,6 +22,11 @@ var GUEST_LIST_FIXED_COLUMNS_COUNT = 3;
 // case-insensitively against the event column header.
 var EVENTS_WHERE_ZERO_MEANS_EVERYONE = ['sunday'];
 
+// Columns after the event columns that hold extra per-invitation data (not
+// events guests RSVP to) and should be ignored when building the RSVP form.
+// Compared case-insensitively against the column header.
+var GUEST_LIST_NON_EVENT_COLUMNS = ['zip code', 'invitation'];
+
 var RESPONSE_FIXED_COLUMNS = ['Timestamp', 'GuestID', 'GuestName', 'InvitationGroup'];
 var RESPONSE_TRAILING_COLUMNS = ['MealChoice', 'Message'];
 
@@ -89,7 +94,19 @@ function getGuestsData() {
 
   var values = sheet.getDataRange().getValues();
   var header = values[0];
-  var eventNames = header.slice(GUEST_LIST_FIXED_COLUMNS_COUNT);
+  var allColumnNames = header.slice(GUEST_LIST_FIXED_COLUMNS_COUNT);
+
+  // Only the columns that aren't listed in GUEST_LIST_NON_EVENT_COLUMNS are
+  // treated as events; keep track of each event's original column index so
+  // values can still be read from the right place in each row.
+  var eventColumns = [];
+  allColumnNames.forEach(function (name, idx) {
+    var normalized = String(name || '').trim().toLowerCase();
+    if (GUEST_LIST_NON_EVENT_COLUMNS.indexOf(normalized) === -1) {
+      eventColumns.push({ name: name, colIndex: GUEST_LIST_FIXED_COLUMNS_COUNT + idx });
+    }
+  });
+  var eventNames = eventColumns.map(function (c) { return c.name; });
 
   var guests = [];
   for (var i = 1; i < values.length; i++) {
@@ -103,9 +120,8 @@ function getGuestsData() {
     if (firstNames.length === 0) continue;
 
     var count = Number(row[2]) || firstNames.length;
-    var invitationGroup = (String(firstNamesRaw).trim() + ' ' + String(lastNamesRaw).trim()).trim();
 
-    firstNames.forEach(function (firstName, idx) {
+    var fullNames = firstNames.map(function (firstName, idx) {
       var lastName;
       if (lastNames.length === 1) {
         lastName = lastNames[0];
@@ -116,25 +132,34 @@ function getGuestsData() {
         // the final last name for any extra first names.
         lastName = lastNames[Math.min(idx, lastNames.length - 1)] || '';
       }
+      return (firstName + ' ' + lastName).trim();
+    });
 
+    // Built from the same first/last name pairing used for each guest's
+    // name, so e.g. "Faria and Shana" / "Ali Chaudhry and Salzberg" becomes
+    // "Faria Ali Chaudhry and Shana Salzberg" rather than the raw,
+    // unpaired cell text.
+    var invitationGroup = fullNames.join(' and ');
+
+    firstNames.forEach(function (firstName, idx) {
       var guest = {
         guestId: i + '-' + idx,
         invitationGroup: invitationGroup,
-        guestName: (firstName + ' ' + lastName).trim(),
+        guestName: fullNames[idx],
         events: []
       };
 
-      for (var c = 0; c < eventNames.length; c++) {
-        var rawValue = row[GUEST_LIST_FIXED_COLUMNS_COUNT + c];
+      eventColumns.forEach(function (eventColumn) {
+        var rawValue = row[eventColumn.colIndex];
         var numericValue = Number(rawValue) || 0;
-        var eventName = String(eventNames[c] || '').trim().toLowerCase();
+        var eventName = String(eventColumn.name || '').trim().toLowerCase();
         if (numericValue === 0 && EVENTS_WHERE_ZERO_MEANS_EVERYONE.indexOf(eventName) !== -1) {
           numericValue = count;
         }
         if (numericValue > 0) {
-          guest.events.push(eventNames[c]);
+          guest.events.push(eventColumn.name);
         }
-      }
+      });
 
       guests.push(guest);
     });
