@@ -1,5 +1,5 @@
 // Paste the deployed Google Apps Script Web App URL here (ends in /exec).
-const APPS_SCRIPT_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz4c3rJbXaJITGTpxcVGswgkCd4PwCFDISwbNw3pJF97ywp87uAppiof31jUcWx-nwC/exec';
 
 const nameInput = document.getElementById('name-input');
 const searchButton = document.getElementById('search-button');
