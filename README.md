@@ -50,14 +50,22 @@ One row per invitation (household), covering one or more people:
 - If you need extra columns after the event columns for your own
   bookkeeping (e.g. `Zip Code`, `Invitation`), they won't be treated as
   events as long as their header is listed (case-insensitively) in
-  `GUEST_LIST_NON_EVENT_COLUMNS` in `Code.gs`.
+  `GUEST_LIST_NON_EVENT_COLUMNS` in `Code.gs`. This already includes common
+  Google Forms address/bookkeeping columns (`Hospitality`, `Contact`,
+  `First Line`, `Second Line`, `City/Town`, `State`,
+  `And Family or Someone Else`, `Formatted Address`, `Print`, `Column 1`);
+  add any others you use so they don't leak into the `Responses` tab.
 
 ### `Responses` tab
 
 Leave this tab empty except you may optionally add a header row matching:
 `Timestamp | GuestID | GuestName | InvitationGroup | <event columns...> | MealChoice | Message`.
-The script will create this header automatically the first time someone
-submits an RSVP if the tab is empty.
+The script creates this header automatically the first time someone
+submits an RSVP if the tab is empty, and on every submission it removes any
+column whose header isn't part of the expected list — so if a Guests-sheet
+column ever gets mistakenly treated as an event (e.g. before it's added to
+`GUEST_LIST_NON_EVENT_COLUMNS`), the stray column is cleaned up
+automatically without editing the sheet by hand.
 
 ## 2. Add the Apps Script
 

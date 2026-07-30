@@ -25,7 +25,11 @@ var EVENTS_WHERE_ZERO_MEANS_EVERYONE = ['sunday'];
 // Columns after the event columns that hold extra per-invitation data (not
 // events guests RSVP to) and should be ignored when building the RSVP form.
 // Compared case-insensitively against the column header.
-var GUEST_LIST_NON_EVENT_COLUMNS = ['zip code', 'invitation'];
+var GUEST_LIST_NON_EVENT_COLUMNS = [
+  'zip code', 'invitation', 'hospitality', 'contact', 'first line',
+  'second line', 'city/town', 'state', 'and family or someone else',
+  'formatted address', 'print', 'column 1'
+];
 
 var RESPONSE_FIXED_COLUMNS = ['Timestamp', 'GuestID', 'GuestName', 'InvitationGroup'];
 var RESPONSE_TRAILING_COLUMNS = ['MealChoice', 'Message'];
@@ -259,6 +263,25 @@ function buildInvitationResponse(groupName, data) {
 }
 
 /**
+ * Removes any existing Responses columns whose header isn't part of the
+ * expected header (e.g. stray columns auto-created before extra Guests
+ * columns were added to GUEST_LIST_NON_EVENT_COLUMNS), so the sheet stays
+ * clean without manual editing. No-op if the sheet is empty.
+ */
+function pruneUnexpectedResponseColumns(sheet, expectedHeader) {
+  var lastCol = sheet.getLastColumn();
+  if (lastCol === 0) return;
+
+  var currentHeader = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  for (var col = lastCol; col >= 1; col--) {
+    var name = currentHeader[col - 1];
+    if (expectedHeader.indexOf(name) === -1) {
+      sheet.deleteColumn(col);
+    }
+  }
+}
+
+/**
  * Expects payload:
  * {
  *   invitationGroup: string,
@@ -277,6 +300,8 @@ function submitRsvp(payload) {
 
   var eventNames = getGuestsData().eventNames;
   var header = RESPONSE_FIXED_COLUMNS.concat(eventNames, RESPONSE_TRAILING_COLUMNS);
+
+  pruneUnexpectedResponseColumns(sheet, header);
 
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(header);
