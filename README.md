@@ -66,11 +66,14 @@ submits an RSVP if the tab is empty.
 3. If you want different meal options, edit the `MEAL_OPTIONS` array at the
    top of the file (exactly two options are expected by the UI, but any
    number will render).
-4. Click **Deploy → New deployment**.
+4. Edit `WEBSITE_PASSWORD` at the top of the file to the password guests
+   should see after submitting their RSVP, so they can access the wedding
+   website.
+5. Click **Deploy → New deployment**.
    - Type: **Web app**.
    - Execute as: **Me**.
    - Who has access: **Anyone**.
-5. Click **Deploy**, authorize the script when prompted, and copy the Web
+6. Click **Deploy**, authorize the script when prompted, and copy the Web
    App URL (ends in `/exec`).
 
 Whenever you edit `Code.gs`, create a **new deployment version** (or use
