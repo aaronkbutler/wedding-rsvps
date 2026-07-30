@@ -15,6 +15,7 @@ const rsvpForm = document.getElementById('rsvp-form');
 const messageInput = document.getElementById('message-input');
 const submitButton = document.getElementById('submit-button');
 const submitMessage = document.getElementById('submit-message');
+const rsvpSummary = document.getElementById('rsvp-summary');
 const continueButton = document.getElementById('continue-button');
 
 let currentInvitation = null;
@@ -48,6 +49,8 @@ function resetSections() {
   submitButton.disabled = false;
   optionsList.innerHTML = '';
   guestsContainer.innerHTML = '';
+  rsvpSummary.innerHTML = '';
+  rsvpSummary.classList.add('hidden');
   setMessage(submitMessage, '');
   continueButton.classList.add('hidden');
   lastWebsitePassword = null;
@@ -255,11 +258,12 @@ async function handleSubmit(evt) {
       return;
     }
     rsvpForm.classList.add('hidden');
-    const thankYouText = result.websitePassword
-      ? `Thank you! Your RSVP has been recorded. Your wedding website password is: ${result.websitePassword}`
+    lastWebsitePassword = determinePassword(guests);
+    const thankYouText = lastWebsitePassword
+      ? `Thank you! Your RSVP has been recorded. Your wedding website password is: ${lastWebsitePassword}`
       : 'Thank you! Your RSVP has been recorded.';
     setMessage(submitMessage, thankYouText, 'success');
-    lastWebsitePassword = result.websitePassword || null;
+    showRsvpSummary(guests);
     continueButton.classList.remove('hidden');
   } catch (err) {
     setMessage(submitMessage, 'Something went wrong submitting your RSVP. Please try again later.', 'error');
@@ -269,6 +273,56 @@ async function handleSubmit(evt) {
 
 function cssEscape(value) {
   return window.CSS && CSS.escape ? CSS.escape(value) : value.replace(/["\\]/g, '\\$&');
+}
+
+function showRsvpSummary(guests) {
+  rsvpSummary.innerHTML = '';
+
+  guests.forEach((guest) => {
+    const card = document.createElement('div');
+    card.className = 'summary-card';
+
+    const heading = document.createElement('h3');
+    heading.textContent = guest.guestName;
+    card.appendChild(heading);
+
+    const list = document.createElement('ul');
+    Object.entries(guest.rsvps).forEach(([eventName, response]) => {
+      const li = document.createElement('li');
+      li.textContent = `${eventName}: ${response}`;
+      list.appendChild(li);
+    });
+
+    if (guest.mealChoice) {
+      const li = document.createElement('li');
+      li.textContent = `Meal: ${guest.mealChoice}`;
+      list.appendChild(li);
+    }
+
+    card.appendChild(list);
+    rsvpSummary.appendChild(card);
+  });
+
+  rsvpSummary.classList.remove('hidden');
+}
+
+function determinePassword(guests) {
+  // Check which events any guest is attending.
+  let attendingFriday = false;
+  let attendingSaturday = false;
+
+  guests.forEach((guest) => {
+    Object.entries(guest.rsvps).forEach(([eventName, response]) => {
+      if (response !== 'Attending') return;
+      const lower = eventName.toLowerCase();
+      if (lower.includes('friday')) attendingFriday = true;
+      if (lower.includes('saturday')) attendingSaturday = true;
+    });
+  });
+
+  if (attendingFriday) return 'shippinguptoboston';
+  if (attendingSaturday) return 'wearefamily';
+  return 'beantown';
 }
 
 function handleContinue() {

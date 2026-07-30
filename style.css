@@ -180,3 +180,27 @@ button:disabled {
 #submit-button {
   width: 100%;
 }
+
+.summary-card {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  background: #fff;
+}
+
+.summary-card h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.summary-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.summary-card ul li {
+  padding: 4px 0;
+  font-size: 0.95rem;
+}
