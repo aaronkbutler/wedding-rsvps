@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wedding RSVP</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="rsvp-widget">
+    <h1>RSVP</h1>
+
+    <section id="search-section">
+      <p>Enter your name to find your invitation.</p>
+      <div class="search-row">
+        <input type="text" id="name-input" placeholder="Your full name" autocomplete="name" />
+        <button id="search-button" type="button">Find My Invitation</button>
+      </div>
+      <p id="search-message" class="message" role="status"></p>
+    </section>
+
+    <section id="options-section" class="hidden">
+      <p>We found a few possible matches. Please select your invitation:</p>
+      <ul id="options-list"></ul>
+    </section>
+
+    <section id="rsvp-section" class="hidden">
+      <h2 id="invitation-title"></h2>
+      <form id="rsvp-form">
+        <div id="guests-container"></div>
+
+        <div class="form-field">
+          <label for="message-input">Message or questions for the couple</label>
+          <textarea id="message-input" rows="4" placeholder="(optional)"></textarea>
+        </div>
+
+        <button id="submit-button" type="submit">Submit RSVP</button>
+      </form>
+      <p id="submit-message" class="message" role="status"></p>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
