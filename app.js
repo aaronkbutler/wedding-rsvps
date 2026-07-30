@@ -259,10 +259,8 @@ async function handleSubmit(evt) {
       ? `Thank you! Your RSVP has been recorded. Your wedding website password is: ${result.websitePassword}`
       : 'Thank you! Your RSVP has been recorded.';
     setMessage(submitMessage, thankYouText, 'success');
-    if (result.websitePassword) {
-      lastWebsitePassword = result.websitePassword;
-      continueButton.classList.remove('hidden');
-    }
+    lastWebsitePassword = result.websitePassword || null;
+    continueButton.classList.remove('hidden');
   } catch (err) {
     setMessage(submitMessage, 'Something went wrong submitting your RSVP. Please try again later.', 'error');
     submitButton.disabled = false;
