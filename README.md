@@ -118,6 +118,31 @@ Any static host works. The simplest option is GitHub Pages:
    external dependencies besides `style.css` and `app.js`).
 3. Resize the embed element to fit the widget (it's responsive, but give it
    enough height, e.g. 700–900px, to avoid internal scrollbars).
+4. After a successful RSVP, the widget shows a **Continue** button. Since
+   the widget runs inside an iframe, it can't call your site's Velo code
+   directly — clicking Continue posts a `window.postMessage` to the parent
+   window instead. Add this to your page's code (adjust the element ID to
+   match your Custom Embed/HTML iframe element):
+
+   ```javascript
+   import { local } from '@wix/site-storage';
+   import wixLocationFrontend from 'wix-location-frontend';
+
+   $w.onReady(function () {
+     $w('#html1').onMessage((event) => {
+       if (event.data && event.data.type === 'wedding-rsvp-continue') {
+         submitPassword(event.data.websitePassword);
+       }
+     });
+   });
+
+   function submitPassword(websitePassword) {
+     if (websitePassword) {
+       local.setItem('userPassword', websitePassword);
+     }
+     wixLocationFrontend.to('/');
+   }
+   ```
 
 ## Data flow summary
 
