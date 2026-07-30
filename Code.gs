@@ -13,7 +13,15 @@ var MEAL_OPTIONS = ['Chicken', 'Vegetarian'];
 var GUESTS_SHEET_NAME = 'Guests';
 var RESPONSES_SHEET_NAME = 'Responses';
 
-var GUEST_FIXED_COLUMNS = ['GuestID', 'InvitationGroup', 'GuestName'];
+// The Guests sheet has three fixed leading columns (First Names, Last
+// Names, Count) followed by one column per event.
+var GUEST_LIST_FIXED_COLUMNS_COUNT = 3;
+
+// Event columns listed here treat a 0 as a placeholder meaning "everyone in
+// the row" (i.e. use the row's Count) rather than "nobody". Compared
+// case-insensitively against the event column header.
+var EVENTS_WHERE_ZERO_MEANS_EVERYONE = ['sunday'];
+
 var RESPONSE_FIXED_COLUMNS = ['Timestamp', 'GuestID', 'GuestName', 'InvitationGroup'];
 var RESPONSE_TRAILING_COLUMNS = ['MealChoice', 'Message'];
 
@@ -51,35 +59,85 @@ function jsonResponse(obj) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-/** Reads the Guests sheet and returns { header, rows } with rows as objects. */
+/**
+ * Splits a "First and Second and Third" (or comma-separated) cell into an
+ * array of individual trimmed name parts.
+ */
+function splitNames(raw) {
+  return String(raw || '')
+    .split(/\s*,\s*|\s+and\s+/i)
+    .map(function (s) { return s.trim(); })
+    .filter(function (s) { return s.length > 0; });
+}
+
+/**
+ * Reads the Guests sheet and returns { eventNames, guests }. Each row
+ * represents one invitation covering one or more people: a "First Names"
+ * column (e.g. "Sharyn and Kenny"), a last-name column (e.g. "Ben-Zvi and
+ * Unger"), a "Count" of total people, and one column per event holding the
+ * number of people from the row attending/invited to that event.
+ *
+ * First and last names are paired positionally so "Sharyn and Kenny" /
+ * "Ben-Zvi and Unger" becomes "Sharyn Ben-Zvi" and "Kenny Unger" — never a
+ * cross-product that would also produce "Sharyn Unger" or "Kenny Ben-Zvi".
+ * If there's a single last name, every first name uses it (e.g. "Susan and
+ * Philip" / "Ben-Zvi" -> "Susan Ben-Zvi" and "Philip Ben-Zvi").
+ */
 function getGuestsData() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(GUESTS_SHEET_NAME);
   if (!sheet) throw new Error('Missing "' + GUESTS_SHEET_NAME + '" sheet');
 
   var values = sheet.getDataRange().getValues();
   var header = values[0];
-  var eventNames = header.slice(GUEST_FIXED_COLUMNS.length);
+  var eventNames = header.slice(GUEST_LIST_FIXED_COLUMNS_COUNT);
 
   var guests = [];
   for (var i = 1; i < values.length; i++) {
     var row = values[i];
-    if (!row[0] && !row[2]) continue; // skip blank rows
+    var firstNamesRaw = row[0];
+    var lastNamesRaw = row[1];
+    if (!firstNamesRaw && !lastNamesRaw) continue; // skip blank rows
 
-    var guest = {
-      guestId: String(row[0]),
-      invitationGroup: row[1],
-      guestName: row[2],
-      events: []
-    };
+    var firstNames = splitNames(firstNamesRaw);
+    var lastNames = splitNames(lastNamesRaw);
+    if (firstNames.length === 0) continue;
 
-    for (var c = 0; c < eventNames.length; c++) {
-      var invited = row[GUEST_FIXED_COLUMNS.length + c];
-      if (invited === true || String(invited).toUpperCase() === 'TRUE') {
-        guest.events.push(eventNames[c]);
+    var count = Number(row[2]) || firstNames.length;
+    var invitationGroup = (String(firstNamesRaw).trim() + ' ' + String(lastNamesRaw).trim()).trim();
+
+    firstNames.forEach(function (firstName, idx) {
+      var lastName;
+      if (lastNames.length === 1) {
+        lastName = lastNames[0];
+      } else if (lastNames.length === firstNames.length) {
+        lastName = lastNames[idx];
+      } else {
+        // Mismatched counts: pair positionally as far as possible, reusing
+        // the final last name for any extra first names.
+        lastName = lastNames[Math.min(idx, lastNames.length - 1)] || '';
       }
-    }
 
-    guests.push(guest);
+      var guest = {
+        guestId: i + '-' + idx,
+        invitationGroup: invitationGroup,
+        guestName: (firstName + ' ' + lastName).trim(),
+        events: []
+      };
+
+      for (var c = 0; c < eventNames.length; c++) {
+        var rawValue = row[GUEST_LIST_FIXED_COLUMNS_COUNT + c];
+        var numericValue = Number(rawValue) || 0;
+        var eventName = String(eventNames[c] || '').trim().toLowerCase();
+        if (numericValue === 0 && EVENTS_WHERE_ZERO_MEANS_EVERYONE.indexOf(eventName) !== -1) {
+          numericValue = count;
+        }
+        if (numericValue > 0) {
+          guest.events.push(eventNames[c]);
+        }
+      }
+
+      guests.push(guest);
+    });
   }
 
   return { eventNames: eventNames, guests: guests };
