@@ -328,16 +328,21 @@ function determinePassword(guests) {
 }
 
 function handleContinue() {
-  // This widget is embedded in Wix via an HTML iframe element, so it can't
-  // call Velo (site) code directly. Instead it posts a message to the
-  // parent window; the Wix page code must listen for it with
-  // $w('#htmlElementId').onMessage(...) and call submitPassword() itself.
+  // When embedded in Wix via an HTML iframe, post a message to the parent
+  // window so the Wix page code can handle the password and navigation.
   // See README.md "Embed in Wix" for the corresponding Velo snippet.
-  if (window.parent) {
+  if (window.parent && window.parent !== window) {
     window.parent.postMessage(
       { type: 'wedding-rsvp-continue', websitePassword: lastWebsitePassword },
       '*'
     );
+  } else {
+    // Standalone (not in an iframe): reset so another guest can RSVP.
+    resetSections();
+    nameInput.value = '';
+    setMessage(searchMessage, '');
+    currentInvitation = null;
+    nameInput.focus();
   }
 }
 
