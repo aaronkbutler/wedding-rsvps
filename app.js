@@ -307,21 +307,23 @@ function showRsvpSummary(guests) {
 }
 
 function determinePassword(guests) {
-  // Check which events any guest is attending.
-  let attendingFriday = false;
-  let attendingSaturday = false;
+  // Determine the password based on which events the guests are *invited to*
+  // (not which they RSVP'd "Attending" to), using the current invitation data.
+  let invitedFriday = false;
+  let invitedSaturday = false;
 
-  guests.forEach((guest) => {
-    Object.entries(guest.rsvps).forEach(([eventName, response]) => {
-      if (response !== 'Attending') return;
-      const lower = eventName.toLowerCase();
-      if (lower.includes('friday')) attendingFriday = true;
-      if (lower.includes('saturday')) attendingSaturday = true;
+  if (currentInvitation && currentInvitation.guests) {
+    currentInvitation.guests.forEach((guest) => {
+      guest.events.forEach((eventName) => {
+        const lower = eventName.toLowerCase();
+        if (lower.includes('friday')) invitedFriday = true;
+        if (lower.includes('saturday')) invitedSaturday = true;
+      });
     });
-  });
+  }
 
-  if (attendingFriday) return 'shippinguptoboston';
-  if (attendingSaturday) return 'wearefamily';
+  if (invitedFriday) return 'shippinguptoboston';
+  if (invitedSaturday) return 'wearefamily';
   return 'beantown';
 }
 
