@@ -152,29 +152,32 @@ function showInvitation(invitation) {
   invitationTitle.textContent = invitation.invitationGroup;
   guestsContainer.innerHTML = '';
 
-  invitation.guests.forEach((guest) => {
-    guestsContainer.appendChild(buildGuestCard(guest, invitation));
+  invitation.eventNames.forEach((eventName) => {
+    const eventGuests = invitation.guests.filter((guest) => guest.events.includes(eventName));
+    if (eventGuests.length > 0) {
+      guestsContainer.appendChild(buildEventCard(eventName, eventGuests, invitation));
+    }
   });
 
   rsvpSection.classList.remove('hidden');
 }
 
-function buildGuestCard(guest, invitation) {
+function buildEventCard(eventName, guests, invitation) {
   const card = document.createElement('div');
-  card.className = 'guest-card';
-  card.dataset.guestId = guest.guestId;
+  card.className = 'guest-card event-card';
+  card.dataset.event = eventName;
 
   const heading = document.createElement('h3');
-  heading.textContent = guest.guestName;
+  heading.textContent = displayEventName(eventName);
   card.appendChild(heading);
 
-  guest.events.forEach((eventName) => {
+  guests.forEach((guest) => {
     const row = document.createElement('div');
-    row.className = 'event-row';
+    row.className = 'event-guest-row';
 
     const label = document.createElement('span');
-    label.className = 'event-name';
-    label.textContent = displayEventName(eventName);
+    label.className = 'event-guest-name';
+    label.textContent = guest.guestName;
     row.appendChild(label);
 
     const toggle = document.createElement('div');
@@ -188,6 +191,7 @@ function buildGuestCard(guest, invitation) {
       radio.name = groupName;
       radio.value = choice;
       radio.dataset.event = eventName;
+      radio.dataset.guestId = guest.guestId;
       radio.required = true;
       label2.appendChild(radio);
       label2.appendChild(document.createTextNode(choice));
@@ -198,37 +202,57 @@ function buildGuestCard(guest, invitation) {
     card.appendChild(row);
   });
 
-  if (guest.events.length > 0) {
-    const mealField = document.createElement('div');
-    mealField.className = 'form-field';
+  if (isWeddingEvent(eventName) && guests.length > 0) {
+    const mealSection = document.createElement('div');
+    mealSection.className = 'meal-section';
 
-    const mealLabel = document.createElement('label');
-    mealLabel.textContent = 'Meal choice';
-    mealField.appendChild(mealLabel);
+    const mealHeading = document.createElement('h4');
+    mealHeading.textContent = 'Meal choices';
+    mealSection.appendChild(mealHeading);
 
-    const select = document.createElement('select');
-    select.className = 'meal-select';
-    select.required = true;
+    guests.forEach((guest) => {
+      const mealField = document.createElement('div');
+      mealField.className = 'form-field meal-row';
 
-    const placeholder = document.createElement('option');
-    placeholder.value = '';
-    placeholder.textContent = 'Select a meal';
-    placeholder.disabled = true;
-    placeholder.selected = true;
-    select.appendChild(placeholder);
+      const mealLabel = document.createElement('label');
+      mealLabel.htmlFor = `meal-${guest.guestId}`;
+      mealLabel.textContent = `${guest.guestName}'s meal choice`;
+      mealField.appendChild(mealLabel);
 
-    invitation.mealOptions.forEach((meal) => {
-      const option = document.createElement('option');
-      option.value = meal;
-      option.textContent = meal;
-      select.appendChild(option);
+      const select = document.createElement('select');
+      select.className = 'meal-select';
+      select.id = `meal-${guest.guestId}`;
+      select.dataset.mealGuestId = guest.guestId;
+      select.required = true;
+
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = 'Select a meal';
+      placeholder.disabled = true;
+      placeholder.selected = true;
+      select.appendChild(placeholder);
+
+      invitation.mealOptions.forEach((meal) => {
+        const option = document.createElement('option');
+        option.value = meal;
+        option.textContent = meal;
+        select.appendChild(option);
+      });
+
+      mealField.appendChild(select);
+      mealSection.appendChild(mealField);
     });
 
-    mealField.appendChild(select);
-    card.appendChild(mealField);
+    card.appendChild(mealSection);
   }
 
   return card;
+}
+
+function isWeddingEvent(eventName) {
+  const rawName = String(eventName || '').trim().toLowerCase();
+  const displayName = displayEventName(eventName).toLowerCase();
+  return rawName === 'sunday' || displayName.includes('wedding');
 }
 
 function slugify(text) {
@@ -242,27 +266,24 @@ async function handleSubmit(evt) {
   submitButton.disabled = true;
   setMessage(submitMessage, 'Submitting…');
 
-  const guestCards = guestsContainer.querySelectorAll('.guest-card');
-  const guests = [];
-
-  guestCards.forEach((card) => {
-    const guestId = card.dataset.guestId;
-    const guestData = currentInvitation.guests.find((g) => String(g.guestId) === String(guestId));
+  const guests = currentInvitation.guests.map((guestData) => {
+    const guestId = guestData.guestId;
     const rsvps = {};
 
     guestData.events.forEach((eventName) => {
-      const checked = card.querySelector(`input[data-event="${cssEscape(eventName)}"]:checked`);
+      const groupName = `rsvp-${guestId}-${slugify(eventName)}`;
+      const checked = guestsContainer.querySelector(`input[name="${cssEscape(groupName)}"]:checked`);
       rsvps[eventName] = checked ? checked.value : '';
     });
 
-    const mealSelect = card.querySelector('.meal-select');
+    const mealSelect = guestsContainer.querySelector(`select[data-meal-guest-id="${cssEscape(String(guestId))}"]`);
 
-    guests.push({
+    return {
       guestId,
       guestName: guestData.guestName,
       rsvps,
       mealChoice: mealSelect ? mealSelect.value : ''
-    });
+    };
   });
 
   const payload = {

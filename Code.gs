@@ -8,7 +8,7 @@
  */
 
 // The two meal options offered to every guest. Edit as needed.
-var MEAL_OPTIONS = ['Chicken', 'Vegetarian'];
+var MEAL_OPTIONS = ['Apricot Glazed Salmon', 'Wild Mushroom Strudel (dairy)'];
 
 // Password shown to guests after they submit their RSVP, so they can access
 // the wedding website. Edit as needed.
@@ -94,6 +94,13 @@ function splitAdditionalGuestNames(raw) {
     .split(/\s*,\s*/)
     .map(function (s) { return s.trim(); })
     .filter(function (s) { return s.length > 0; });
+}
+
+function formatGuestList(names) {
+  if (!Array.isArray(names) || names.length === 0) return '';
+  if (names.length === 1) return names[0];
+  if (names.length === 2) return names[0] + ' and ' + names[1];
+  return names.slice(0, -1).join(', ') + ', and ' + names[names.length - 1];
 }
 
 /**
@@ -214,7 +221,7 @@ function getGuestsData() {
     // "Faria Ali Chaudhry and Shana Salzberg" rather than the raw,
     // unpaired cell text. Named additional guests are appended so the
     // invitation title reflects everyone on the invite.
-    var invitationGroup = fullNames.concat(additionalNames).join(' and ');
+    var invitationGroup = formatGuestList(fullNames.concat(additionalNames));
 
     firstNames.forEach(function (firstName, idx) {
       var guest = {
