@@ -32,8 +32,13 @@ var EVENTS_WHERE_ZERO_MEANS_EVERYONE = ['sunday'];
 var GUEST_LIST_NON_EVENT_COLUMNS = [
   'zip code', 'invitation', 'hospitality', 'contact', 'first line',
   'second line', 'city/town', 'state', 'and family or someone else',
-  'formatted address', 'print', 'column 1'
+  'formatted address', 'print', 'column 1', 'additional guests'
 ];
+
+// The column header in the Guests sheet that holds comma-separated full names
+// of additional guests belonging to the same invitation row. These names are
+// added to the group and are searchable. Compared case-insensitively.
+var ADDITIONAL_GUESTS_COLUMN = 'additional guests';
 
 var RESPONSE_FIXED_COLUMNS = ['Timestamp', 'GuestID', 'GuestName', 'InvitationGroup'];
 var RESPONSE_EVENT_COLUMNS = ['Fri night', 'Saturday', 'Sunday'];
@@ -109,8 +114,12 @@ function getGuestsData() {
   // treated as events; keep track of each event's original column index so
   // values can still be read from the right place in each row.
   var eventColumns = [];
+  var additionalGuestsColIndex = -1;
   allColumnNames.forEach(function (name, idx) {
     var normalized = String(name || '').trim().toLowerCase();
+    if (normalized === ADDITIONAL_GUESTS_COLUMN.toLowerCase()) {
+      additionalGuestsColIndex = GUEST_LIST_FIXED_COLUMNS_COUNT + idx;
+    }
     if (GUEST_LIST_NON_EVENT_COLUMNS.indexOf(normalized) === -1) {
       eventColumns.push({ name: name, colIndex: GUEST_LIST_FIXED_COLUMNS_COUNT + idx });
     }
@@ -172,6 +181,38 @@ function getGuestsData() {
 
       guests.push(guest);
     });
+
+    // Parse additional guests from the dedicated column (comma-separated
+    // full names). They join the same invitation group and inherit the same
+    // events as the primary guests.
+    if (additionalGuestsColIndex !== -1) {
+      var additionalRaw = String(row[additionalGuestsColIndex] || '').trim();
+      if (additionalRaw) {
+        var additionalNames = additionalRaw.split(/\s*,\s*/).filter(function (s) { return s.length > 0; });
+        additionalNames.forEach(function (name, extraIdx) {
+          var extraGuest = {
+            guestId: i + '-extra-' + extraIdx,
+            invitationGroup: invitationGroup,
+            guestName: name,
+            events: []
+          };
+
+          eventColumns.forEach(function (eventColumn) {
+            var rawValue = row[eventColumn.colIndex];
+            var numericValue = Number(rawValue) || 0;
+            var eventName = String(eventColumn.name || '').trim().toLowerCase();
+            if (numericValue === 0 && EVENTS_WHERE_ZERO_MEANS_EVERYONE.indexOf(eventName) !== -1) {
+              numericValue = count;
+            }
+            if (numericValue > 0) {
+              extraGuest.events.push(eventColumn.name);
+            }
+          });
+
+          guests.push(extraGuest);
+        });
+      }
+    }
   }
 
   return { eventNames: eventNames, guests: guests };
