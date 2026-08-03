@@ -1,6 +1,16 @@
 // Paste the deployed Google Apps Script Web App URL here (ends in /exec).
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz4c3rJbXaJITGTpxcVGswgkCd4PwCFDISwbNw3pJF97ywp87uAppiof31jUcWx-nwC/exec';
 
+const landingSection = document.getElementById('landing-section');
+const rsvpButton = document.getElementById('rsvp-button');
+const loginButton = document.getElementById('login-button');
+
+const loginSection = document.getElementById('login-section');
+const loginPasswordInput = document.getElementById('login-password-input');
+const loginSubmitButton = document.getElementById('login-submit-button');
+const loginMessage = document.getElementById('login-message');
+
+const searchSection = document.getElementById('search-section');
 const nameInput = document.getElementById('name-input');
 const searchButton = document.getElementById('search-button');
 const searchMessage = document.getElementById('search-message');
@@ -327,18 +337,49 @@ function determinePassword(guests) {
   return 'beantown';
 }
 
+function postPasswordToParent(password) {
+  window.parent.postMessage(
+    { type: 'wedding-rsvp-continue', websitePassword: password },
+    '*'
+  );
+}
+
 function handleContinue() {
   // This widget is embedded in Wix via an HTML iframe element, so it can't
   // call Velo (site) code directly. Instead it posts a message to the
   // parent window; the Wix page code must listen for it with
   // $w('#htmlElementId').onMessage(...) and call submitPassword() itself.
   // See README.md "Embed in Wix" for the corresponding Velo snippet.
-  window.parent.postMessage(
-    { type: 'wedding-rsvp-continue', websitePassword: lastWebsitePassword },
-    '*'
-  );
+  postPasswordToParent(lastWebsitePassword);
 }
 
+function handleRsvpButton() {
+  landingSection.classList.add('hidden');
+  searchSection.classList.remove('hidden');
+  nameInput.focus();
+}
+
+function handleLoginButton() {
+  landingSection.classList.add('hidden');
+  loginSection.classList.remove('hidden');
+  loginPasswordInput.focus();
+}
+
+function handleLoginSubmit() {
+  const password = loginPasswordInput.value.trim();
+  if (!password) {
+    setMessage(loginMessage, 'Please enter a password.', 'error');
+    return;
+  }
+  postPasswordToParent(password);
+}
+
+rsvpButton.addEventListener('click', handleRsvpButton);
+loginButton.addEventListener('click', handleLoginButton);
+loginSubmitButton.addEventListener('click', handleLoginSubmit);
+loginPasswordInput.addEventListener('keydown', (evt) => {
+  if (evt.key === 'Enter') handleLoginSubmit();
+});
 searchButton.addEventListener('click', handleSearch);
 nameInput.addEventListener('keydown', (evt) => {
   if (evt.key === 'Enter') handleSearch();
