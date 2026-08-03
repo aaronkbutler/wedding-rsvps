@@ -26,13 +26,28 @@ body {
   border-radius: 12px;
 }
 
-h1 {
+.couple-header {
   text-align: center;
+  margin-top: 0;
+  margin-bottom: 24px;
+}
+
+h1.couple-name {
+  font-family: 'Georgia', 'Times New Roman', serif;
   font-weight: 400;
-  letter-spacing: 2px;
+  letter-spacing: 0.35em;
   text-transform: uppercase;
   font-size: 1.6rem;
-  margin-top: 0;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.couple-and {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-style: italic;
+  font-size: 1rem;
+  margin: 4px 0;
+  letter-spacing: 0.05em;
 }
 
 h2 {
