@@ -89,6 +89,13 @@ function splitNames(raw) {
     .filter(function (s) { return s.length > 0; });
 }
 
+function splitAdditionalGuestNames(raw) {
+  return String(raw || '')
+    .split(/\s*,\s*/)
+    .map(function (s) { return s.trim(); })
+    .filter(function (s) { return s.length > 0; });
+}
+
 /**
  * Reads the Guests sheet and returns { eventNames, guests }. Each row
  * represents one invitation covering one or more people: a "First Names"
@@ -197,11 +204,17 @@ function getGuestsData() {
       continue;
     }
 
+    var additionalNames = [];
+    if (additionalGuestsColIndex !== -1) {
+      additionalNames = splitAdditionalGuestNames(row[additionalGuestsColIndex]);
+    }
+
     // Built from the same first/last name pairing used for each guest's
     // name, so e.g. "Faria and Shana" / "Ali Chaudhry and Salzberg" becomes
     // "Faria Ali Chaudhry and Shana Salzberg" rather than the raw,
-    // unpaired cell text.
-    var invitationGroup = fullNames.join(' and ');
+    // unpaired cell text. Named additional guests are appended so the
+    // invitation title reflects everyone on the invite.
+    var invitationGroup = fullNames.concat(additionalNames).join(' and ');
 
     firstNames.forEach(function (firstName, idx) {
       var guest = {
@@ -229,10 +242,7 @@ function getGuestsData() {
     // Parse additional guests from the dedicated column (comma-separated
     // full names). They join the same invitation group and inherit the same
     // events as the primary guests.
-    if (additionalGuestsColIndex !== -1) {
-      var additionalRaw = String(row[additionalGuestsColIndex] || '').trim();
-      if (additionalRaw) {
-        var additionalNames = additionalRaw.split(/\s*,\s*/).filter(function (s) { return s.length > 0; });
+    if (additionalNames.length > 0) {
         additionalNames.forEach(function (name, extraIdx) {
           var extraGuest = {
             guestId: i + '-extra-' + extraIdx,
@@ -255,7 +265,6 @@ function getGuestsData() {
 
           guests.push(extraGuest);
         });
-      }
     }
   }
 
