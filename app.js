@@ -3,7 +3,7 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz4c3rJbXaJITGT
 
 // Maps raw event column headers from the Google Sheet to user-friendly display names.
 const EVENT_DISPLAY_NAMES = {
-  'friday': 'Kabbalat Shabbat and Dinner - Friday, October 23rd @ TBD',
+  'fri night': 'Kabbalat Shabbat and Dinner - Friday, October 23rd @ TBD',
   'saturday': 'Aufruf - Saturday, October 24th @ 9:30 am',
   'sunday': 'Wedding - Sunday, October 25th @ 3 pm',
 };
