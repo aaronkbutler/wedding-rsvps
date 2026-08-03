@@ -36,6 +36,7 @@ var GUEST_LIST_NON_EVENT_COLUMNS = [
 ];
 
 var RESPONSE_FIXED_COLUMNS = ['Timestamp', 'GuestID', 'GuestName', 'InvitationGroup'];
+var RESPONSE_EVENT_COLUMNS = ['Fri night', 'Saturday', 'Sunday'];
 var RESPONSE_TRAILING_COLUMNS = ['MealChoice', 'Message'];
 
 function doGet(e) {
@@ -302,8 +303,7 @@ function submitRsvp(payload) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(RESPONSES_SHEET_NAME);
   if (!sheet) throw new Error('Missing "' + RESPONSES_SHEET_NAME + '" sheet');
 
-  var eventNames = getGuestsData().eventNames;
-  var header = RESPONSE_FIXED_COLUMNS.concat(eventNames, RESPONSE_TRAILING_COLUMNS);
+  var header = RESPONSE_FIXED_COLUMNS.concat(RESPONSE_EVENT_COLUMNS, RESPONSE_TRAILING_COLUMNS);
 
   pruneUnexpectedResponseColumns(sheet, header);
 
@@ -325,7 +325,7 @@ function submitRsvp(payload) {
     row[header.indexOf('GuestName')] = guestRsvp.guestName || '';
     row[header.indexOf('InvitationGroup')] = payload.invitationGroup || '';
 
-    eventNames.forEach(function (eventName) {
+    RESPONSE_EVENT_COLUMNS.forEach(function (eventName) {
       var response = (guestRsvp.rsvps && guestRsvp.rsvps[eventName]) || '';
       var colIndex = header.indexOf(eventName);
       if (colIndex !== -1) row[colIndex] = response;
