@@ -10,7 +10,23 @@
   <div class="rsvp-widget">
     <h1>RSVP</h1>
 
-    <section id="search-section">
+    <section id="landing-section">
+      <div class="landing-buttons">
+        <button id="rsvp-button" type="button">RSVP</button>
+        <button id="login-button" type="button">Login</button>
+      </div>
+    </section>
+
+    <section id="login-section" class="hidden">
+      <p>Enter your password to access the wedding website.</p>
+      <div class="login-row">
+        <input type="password" id="login-password-input" placeholder="Password" />
+        <button id="login-submit-button" type="button">Submit</button>
+      </div>
+      <p id="login-message" class="message" role="status"></p>
+    </section>
+
+    <section id="search-section" class="hidden">
       <p>Enter your name to find your invitation.</p>
       <div class="search-row">
         <input type="text" id="name-input" placeholder="Your full name" autocomplete="name" />

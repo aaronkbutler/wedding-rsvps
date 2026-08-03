@@ -1,6 +1,16 @@
 // Paste the deployed Google Apps Script Web App URL here (ends in /exec).
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz4c3rJbXaJITGTpxcVGswgkCd4PwCFDISwbNw3pJF97ywp87uAppiof31jUcWx-nwC/exec';
 
+const landingSection = document.getElementById('landing-section');
+const rsvpButton = document.getElementById('rsvp-button');
+const loginButton = document.getElementById('login-button');
+
+const loginSection = document.getElementById('login-section');
+const loginPasswordInput = document.getElementById('login-password-input');
+const loginSubmitButton = document.getElementById('login-submit-button');
+const loginMessage = document.getElementById('login-message');
+
+const searchSection = document.getElementById('search-section');
 const nameInput = document.getElementById('name-input');
 const searchButton = document.getElementById('search-button');
 const searchMessage = document.getElementById('search-message');
@@ -307,22 +317,31 @@ function showRsvpSummary(guests) {
 }
 
 function determinePassword(guests) {
-  // Check which events any guest is attending.
-  let attendingFriday = false;
-  let attendingSaturday = false;
+  // Determine the password based on which events the guests are *invited to*
+  // (not which they RSVP'd "Attending" to), using the current invitation data.
+  let invitedFriday = false;
+  let invitedSaturday = false;
 
-  guests.forEach((guest) => {
-    Object.entries(guest.rsvps).forEach(([eventName, response]) => {
-      if (response !== 'Attending') return;
-      const lower = eventName.toLowerCase();
-      if (lower.includes('friday')) attendingFriday = true;
-      if (lower.includes('saturday')) attendingSaturday = true;
+  if (currentInvitation && currentInvitation.guests) {
+    currentInvitation.guests.forEach((guest) => {
+      guest.events.forEach((eventName) => {
+        const lower = eventName.toLowerCase();
+        if (lower.includes('friday')) invitedFriday = true;
+        if (lower.includes('saturday')) invitedSaturday = true;
+      });
     });
-  });
+  }
 
-  if (attendingFriday) return 'shippinguptoboston';
-  if (attendingSaturday) return 'wearefamily';
+  if (invitedFriday) return 'shippinguptoboston';
+  if (invitedSaturday) return 'wearefamily';
   return 'beantown';
+}
+
+function postPasswordToParent(password) {
+  window.parent.postMessage(
+    { type: 'wedding-rsvp-continue', websitePassword: password },
+    '*'
+  );
 }
 
 function handleContinue() {
@@ -331,14 +350,36 @@ function handleContinue() {
   // parent window; the Wix page code must listen for it with
   // $w('#htmlElementId').onMessage(...) and call submitPassword() itself.
   // See README.md "Embed in Wix" for the corresponding Velo snippet.
-  if (window.parent) {
-    window.parent.postMessage(
-      { type: 'wedding-rsvp-continue', websitePassword: lastWebsitePassword },
-      '*'
-    );
-  }
+  postPasswordToParent(lastWebsitePassword);
 }
 
+function handleRsvpButton() {
+  landingSection.classList.add('hidden');
+  searchSection.classList.remove('hidden');
+  nameInput.focus();
+}
+
+function handleLoginButton() {
+  landingSection.classList.add('hidden');
+  loginSection.classList.remove('hidden');
+  loginPasswordInput.focus();
+}
+
+function handleLoginSubmit() {
+  const password = loginPasswordInput.value.trim();
+  if (!password) {
+    setMessage(loginMessage, 'Please enter a password.', 'error');
+    return;
+  }
+  postPasswordToParent(password);
+}
+
+rsvpButton.addEventListener('click', handleRsvpButton);
+loginButton.addEventListener('click', handleLoginButton);
+loginSubmitButton.addEventListener('click', handleLoginSubmit);
+loginPasswordInput.addEventListener('keydown', (evt) => {
+  if (evt.key === 'Enter') handleLoginSubmit();
+});
 searchButton.addEventListener('click', handleSearch);
 nameInput.addEventListener('keydown', (evt) => {
   if (evt.key === 'Enter') handleSearch();
