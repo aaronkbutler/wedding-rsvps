@@ -124,6 +124,17 @@ function getGuestsData() {
       eventColumns.push({ name: name, colIndex: GUEST_LIST_FIXED_COLUMNS_COUNT + idx });
     }
   });
+
+  // Fallback: if no column header matched the additional-guests name, try the
+  // last column in the sheet provided it is a known non-event column (so we
+  // never accidentally steal a real event column on a minimal sheet).
+  if (additionalGuestsColIndex === -1 && allColumnNames.length > 0) {
+    var lastColName = String(allColumnNames[allColumnNames.length - 1] || '').trim().toLowerCase();
+    if (GUEST_LIST_NON_EVENT_COLUMNS.indexOf(lastColName) !== -1) {
+      additionalGuestsColIndex = GUEST_LIST_FIXED_COLUMNS_COUNT + (allColumnNames.length - 1);
+    }
+  }
+
   var eventNames = eventColumns.map(function (c) { return c.name; });
 
   var guests = [];
