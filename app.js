@@ -1,6 +1,17 @@
 // Paste the deployed Google Apps Script Web App URL here (ends in /exec).
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz4c3rJbXaJITGTpxcVGswgkCd4PwCFDISwbNw3pJF97ywp87uAppiof31jUcWx-nwC/exec';
 
+// Maps raw event column headers from the Google Sheet to user-friendly display names.
+const EVENT_DISPLAY_NAMES = {
+  'friday': 'Kabbalat Shabbat and Dinner - Friday, October 23rd @ TBD',
+  'saturday': 'Aufruf - Saturday, October 24th @ 9:30 am',
+  'sunday': 'Wedding - Sunday, October 25th @ 3 pm',
+};
+
+function displayEventName(eventName) {
+  return EVENT_DISPLAY_NAMES[eventName.toLowerCase()] || eventName;
+}
+
 const landingSection = document.getElementById('landing-section');
 const rsvpButton = document.getElementById('rsvp-button');
 const loginButton = document.getElementById('login-button');
@@ -163,7 +174,7 @@ function buildGuestCard(guest, invitation) {
 
     const label = document.createElement('span');
     label.className = 'event-name';
-    label.textContent = eventName;
+    label.textContent = displayEventName(eventName);
     row.appendChild(label);
 
     const toggle = document.createElement('div');
@@ -299,7 +310,7 @@ function showRsvpSummary(guests) {
     const list = document.createElement('ul');
     Object.entries(guest.rsvps).forEach(([eventName, response]) => {
       const li = document.createElement('li');
-      li.textContent = `${eventName}: ${response}`;
+      li.textContent = `${displayEventName(eventName)}: ${response}`;
       list.appendChild(li);
     });
 
