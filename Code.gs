@@ -137,6 +137,21 @@ function getGuestsData() {
 
   var eventNames = eventColumns.map(function (c) { return c.name; });
 
+  // First pass: collect all names listed in the Additional Guests column
+  // across every row so that standalone rows for those people can be
+  // suppressed (they'll be represented via their parent row instead).
+  var additionalGuestNamesSet = {};
+  if (additionalGuestsColIndex !== -1) {
+    for (var pre = 1; pre < values.length; pre++) {
+      var rawCell = String(values[pre][additionalGuestsColIndex] || '').trim();
+      if (rawCell) {
+        rawCell.split(/\s*,\s*/).forEach(function (n) {
+          if (n) additionalGuestNamesSet[normalizeName(n)] = true;
+        });
+      }
+    }
+  }
+
   var guests = [];
   for (var i = 1; i < values.length; i++) {
     var row = values[i];
@@ -163,6 +178,24 @@ function getGuestsData() {
       }
       return (firstName + ' ' + lastName).trim();
     });
+
+    // If every full name from this row appears in another row's Additional
+    // Guests column, skip the entire row — those people will be represented
+    // via the parent row's additional-guests parsing instead.
+    var allClaimedByAnother = fullNames.every(function (fn) {
+      return !!additionalGuestNamesSet[normalizeName(fn)];
+    });
+
+    // Only skip if this row does NOT itself have its own Additional Guests
+    // (i.e. it's purely a "child" row, not itself a parent).
+    var rowHasOwnAdditional = false;
+    if (additionalGuestsColIndex !== -1) {
+      rowHasOwnAdditional = String(row[additionalGuestsColIndex] || '').trim().length > 0;
+    }
+
+    if (allClaimedByAnother && !rowHasOwnAdditional) {
+      continue;
+    }
 
     // Built from the same first/last name pairing used for each guest's
     // name, so e.g. "Faria and Shana" / "Ali Chaudhry and Salzberg" becomes
