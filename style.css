@@ -197,6 +197,16 @@ button:disabled {
   color: #5f4448;
 }
 
+.event-address-link {
+  color: inherit;
+  font-style: italic;
+  text-decoration: underline;
+}
+
+.event-address-link:hover {
+  color: var(--color-primary-dark);
+}
+
 .event-row {
   display: flex;
   align-items: center;

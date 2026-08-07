@@ -9,10 +9,21 @@ const EVENT_DISPLAY_NAMES = {
 };
 
 const EVENT_DESCRIPTIONS = {
-  'fri night': 'Kabbalat Shabbat followed by Shabbat dinner at the Kriegel/Butler (heated) Tent - 88 Cottage Street, Sharon MA 02067',
-  'saturday': 'Shabbat morning davening followed by a kiddush lunch at the Kriegel/Butler (heated) Tent - 88 Cottage Street, Sharon, MA 02067 - Open Tent until Shabbat ends. Come shmooze!',
-  'sunday': 'The main event at Temple Emanuel - 385 Ward Street, Newton, MA 02459',
+  'fri night': 'At the Kriegel/Butler (heated) Tent - 88 Cottage Street, Sharon MA 02067',
+  'saturday': 'Davening followed by kiddush lunch at the Kriegel/Butler (heated) Tent - 88 Cottage Street, Sharon, MA 02067. Open Tent until Shabbat ends. Come shmooze!',
+  'sunday': 'Ceremony and reception at Temple Emanuel - 385 Ward Street, Newton, MA 02459',
 };
+
+const EVENT_ADDRESS_LINKS = [
+  {
+    pattern: /88 Cottage Street, Sharon,? MA 02067/,
+    url: 'https://share.google/DNuqEihVdpBUv4Kq1'
+  },
+  {
+    pattern: /385 Ward Street, Newton, MA 02459/,
+    url: 'https://share.google/vCLpeA5kHFBKNAueA'
+  }
+];
 
 function displayEventName(eventName) {
   return EVENT_DISPLAY_NAMES[eventName.toLowerCase()] || eventName;
@@ -20,6 +31,41 @@ function displayEventName(eventName) {
 
 function displayEventDescription(eventName) {
   return EVENT_DESCRIPTIONS[eventName.toLowerCase()] || '';
+}
+
+function appendEventDescriptionWithAddressLink(container, descriptionText) {
+  const matchConfig = EVENT_ADDRESS_LINKS.find((entry) => entry.pattern.test(descriptionText));
+  if (!matchConfig) {
+    container.textContent = descriptionText;
+    return;
+  }
+
+  const match = descriptionText.match(matchConfig.pattern);
+  if (!match) {
+    container.textContent = descriptionText;
+    return;
+  }
+
+  const addressText = match[0];
+  const startIndex = match.index || 0;
+  const before = descriptionText.slice(0, startIndex);
+  const after = descriptionText.slice(startIndex + addressText.length);
+
+  if (before) {
+    container.appendChild(document.createTextNode(before));
+  }
+
+  const link = document.createElement('a');
+  link.className = 'event-address-link';
+  link.href = matchConfig.url;
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  link.textContent = addressText;
+  container.appendChild(link);
+
+  if (after) {
+    container.appendChild(document.createTextNode(after));
+  }
 }
 
 const landingSection = document.getElementById('landing-section');
@@ -223,7 +269,7 @@ function buildEventCard(eventName, guests, invitation) {
   if (eventDescription) {
     const description = document.createElement('p');
     description.className = 'event-description';
-    description.textContent = eventDescription;
+    appendEventDescriptionWithAddressLink(description, eventDescription);
     card.appendChild(description);
   }
 
