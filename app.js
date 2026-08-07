@@ -10,7 +10,7 @@ const EVENT_DISPLAY_NAMES = {
 
 const EVENT_DESCRIPTIONS = {
   'fri night': 'At the Kriegel/Butler (heated) Tent - 88 Cottage Street, Sharon MA 02067',
-  'saturday': 'Davening followed by kiddush lunch at the Kriegel/Butler (heated) Tent - 88 Cottage Street, Sharon, MA 02067. Open Tent until Shabbat ends. Come shmooze!',
+  'saturday': 'Davening followed by kiddush lunch at the Kriegel/Butler (heated) Tent - 88 Cottage Street, Sharon, MA 02067.\nOpen Tent until Shabbat ends, come shmooze!',
   'sunday': 'Ceremony and reception at Temple Emanuel - 385 Ward Street, Newton, MA 02459',
 };
 
@@ -61,6 +61,10 @@ function appendEventDescriptionWithAddressLink(container, descriptionText) {
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
   link.textContent = addressText;
+  link.addEventListener('click', (evt) => {
+    evt.preventDefault();
+    window.open(matchConfig.url, '_blank', 'noopener,noreferrer');
+  });
   container.appendChild(link);
 
   if (after) {
