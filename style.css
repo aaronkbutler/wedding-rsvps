@@ -78,6 +78,24 @@ h2 {
   margin-top: 12px;
 }
 
+.back-button {
+  display: inline-block;
+  margin-bottom: 14px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-primary-dark);
+  font-size: 0.95rem;
+  font-style: italic;
+  font-family: 'Georgia', 'Times New Roman', serif;
+}
+
+.back-button:hover {
+  background: transparent;
+  color: var(--color-primary);
+}
+
 .search-row {
   display: flex;
   gap: 8px;

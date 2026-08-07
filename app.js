@@ -17,11 +17,13 @@ const rsvpButton = document.getElementById('rsvp-button');
 const loginButton = document.getElementById('login-button');
 
 const loginSection = document.getElementById('login-section');
+const loginBackButton = document.getElementById('login-back-button');
 const loginPasswordInput = document.getElementById('login-password-input');
 const loginSubmitButton = document.getElementById('login-submit-button');
 const loginMessage = document.getElementById('login-message');
 
 const searchSection = document.getElementById('search-section');
+const searchBackButton = document.getElementById('search-back-button');
 const nameInput = document.getElementById('name-input');
 const searchButton = document.getElementById('search-button');
 const searchMessage = document.getElementById('search-message');
@@ -30,6 +32,7 @@ const optionsSection = document.getElementById('options-section');
 const optionsList = document.getElementById('options-list');
 
 const rsvpSection = document.getElementById('rsvp-section');
+const rsvpBackButton = document.getElementById('rsvp-back-button');
 const invitationTitle = document.getElementById('invitation-title');
 const guestsContainer = document.getElementById('guests-container');
 const rsvpForm = document.getElementById('rsvp-form');
@@ -70,18 +73,27 @@ function apiPost(payload) {
 }
 
 function resetSections() {
+  loginSection.classList.add('hidden');
+  searchSection.classList.add('hidden');
   optionsSection.classList.add('hidden');
   rsvpSection.classList.add('hidden');
   rsvpForm.classList.remove('hidden');
   submitButton.disabled = false;
   optionsList.innerHTML = '';
   guestsContainer.innerHTML = '';
+  invitationTitle.textContent = '';
+  nameInput.value = '';
+  loginPasswordInput.value = '';
   emailInput.value = '';
+  messageInput.value = '';
   rsvpSummaryContent.innerHTML = '';
   rsvpSummary.open = false;
   rsvpSummary.classList.add('hidden');
+  setMessage(searchMessage, '');
+  setMessage(loginMessage, '');
   setMessage(submitMessage, '');
   continueButton.classList.add('hidden');
+  currentInvitation = null;
   lastWebsitePassword = null;
 }
 
@@ -502,6 +514,11 @@ function handleLoginButton() {
   loginPasswordInput.focus();
 }
 
+function handleBackToLanding() {
+  resetSections();
+  landingSection.classList.remove('hidden');
+}
+
 function handleLoginSubmit() {
   const password = loginPasswordInput.value.trim();
   if (!password) {
@@ -523,3 +540,6 @@ nameInput.addEventListener('keydown', (evt) => {
 });
 rsvpForm.addEventListener('submit', handleSubmit);
 continueButton.addEventListener('click', handleContinue);
+loginBackButton.addEventListener('click', handleBackToLanding);
+searchBackButton.addEventListener('click', handleBackToLanding);
+rsvpBackButton.addEventListener('click', handleBackToLanding);
