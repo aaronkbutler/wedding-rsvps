@@ -63,6 +63,21 @@ h2 {
   display: none !important;
 }
 
+#rsvp-summary {
+  margin-top: 12px;
+}
+
+#rsvp-summary summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  margin-bottom: 12px;
+}
+
+#rsvp-summary-content {
+  margin-top: 12px;
+}
+
 .search-row {
   display: flex;
   gap: 8px;
@@ -70,6 +85,7 @@ h2 {
 }
 
 input[type="text"],
+input[type="email"],
 textarea,
 select {
   font-size: 1rem;
@@ -233,6 +249,16 @@ button:disabled {
   margin-bottom: 0;
 }
 
+.hospitality-section {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border);
+}
+
+.hospitality-question {
+  margin: 0 0 12px;
+}
+
 #submit-button {
   width: 100%;
 }
@@ -258,14 +284,35 @@ button:disabled {
 
 .landing-buttons {
   display: flex;
-  gap: 12px;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   margin: 16px 0;
 }
 
 .landing-buttons button {
-  flex: 1;
-  max-width: 200px;
+  width: 100%;
+  max-width: 280px;
+}
+
+#rsvp-button .rsvp-deadline {
+  font-style: italic;
+}
+
+#login-button {
+  width: auto;
+  max-width: none;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-primary-dark);
+  font-style: italic;
+}
+
+#login-button:hover {
+  background: transparent;
+  color: var(--color-primary);
 }
 
 .login-row {

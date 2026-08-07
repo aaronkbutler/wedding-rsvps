@@ -17,8 +17,8 @@
 
     <section id="landing-section">
       <div class="landing-buttons">
-        <button id="rsvp-button" type="button">RSVP</button>
-        <button id="login-button" type="button">Sign In</button>
+        <button id="rsvp-button" type="button">RSVP <span class="rsvp-deadline">by October 1st &rarr;</span></button>
+        <button id="login-button" type="button">Jump straight to site &rarr;</button>
       </div>
     </section>
 
@@ -48,6 +48,11 @@
     <section id="rsvp-section" class="hidden">
       <h2 id="invitation-title"></h2>
       <form id="rsvp-form">
+        <div class="form-field">
+          <label for="email-input">Email address for RSVP confirmation</label>
+          <input type="email" id="email-input" placeholder="name@example.com" autocomplete="email" required />
+        </div>
+
         <div id="guests-container"></div>
 
         <div class="form-field">
@@ -58,7 +63,10 @@
         <button id="submit-button" type="submit">Submit RSVP</button>
       </form>
       <p id="submit-message" class="message" role="status"></p>
-      <div id="rsvp-summary" class="hidden"></div>
+      <details id="rsvp-summary" class="hidden">
+        <summary>View RSVP summary</summary>
+        <div id="rsvp-summary-content"></div>
+      </details>
       <button id="continue-button" type="button" class="hidden">Continue</button>
     </section>
   </div>

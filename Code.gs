@@ -8,11 +8,22 @@
  */
 
 // The two meal options offered to every guest. Edit as needed.
-var MEAL_OPTIONS = ['Apricot Glazed Salmon', 'Wild Mushroom Strudel (dairy)'];
+var MEAL_OPTIONS = ['Apricot Glazed Salmon (gluten-free)', 'Wild Mushroom Strudel (dairy)'];
 
 // Password shown to guests after they submit their RSVP, so they can access
 // the wedding website. Edit as needed.
 var WEBSITE_PASSWORD = 'REPLACE_WITH_WEBSITE_PASSWORD';
+
+// Enables/disables RSVP confirmation emails sent through GmailApp.
+var SEND_CONFIRMATION_EMAILS = true;
+
+// Confirmation email settings.
+var CONFIRMATION_EMAIL_SUBJECT = 'Your Wedding RSVP Confirmation';
+var CONFIRMATION_EMAIL_SENDER_NAME = 'Kriegel and Butler Wedding';
+
+// Optional fixed recipients who should always receive a copy.
+// Example: ['you@example.com']
+var CONFIRMATION_EMAIL_RECIPIENTS = [];
 
 var GUESTS_SHEET_NAME = 'Guests';
 var RESPONSES_SHEET_NAME = 'Responses';
@@ -42,7 +53,7 @@ var ADDITIONAL_GUESTS_COLUMN = 'additional guests';
 
 var RESPONSE_FIXED_COLUMNS = ['Timestamp', 'GuestID', 'GuestName', 'InvitationGroup'];
 var RESPONSE_EVENT_COLUMNS = ['Fri night', 'Saturday', 'Sunday'];
-var RESPONSE_TRAILING_COLUMNS = ['MealChoice', 'Message'];
+var RESPONSE_TRAILING_COLUMNS = ['MealChoice', 'HospitalityNeeded', 'Message'];
 
 function doGet(e) {
   try {
@@ -66,8 +77,19 @@ function doGet(e) {
 function doPost(e) {
   try {
     var payload = JSON.parse(e.postData.contents);
+    var submittedEmail = normalizeSubmittedEmail(payload && payload.email);
+    if (!submittedEmail) {
+      throw new Error('A valid email address is required.');
+    }
+    payload.email = submittedEmail;
+
     submitRsvp(payload);
-    return jsonResponse({ success: true, websitePassword: WEBSITE_PASSWORD });
+    var emailStatus = trySendConfirmationEmails(payload);
+    return jsonResponse({
+      success: true,
+      websitePassword: WEBSITE_PASSWORD,
+      emailStatus: emailStatus
+    });
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
   }
@@ -76,6 +98,162 @@ function doPost(e) {
 function jsonResponse(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function trySendConfirmationEmails(payload) {
+  if (!SEND_CONFIRMATION_EMAILS) {
+    return { attempted: false, sent: 0, reason: 'disabled' };
+  }
+
+  try {
+    return sendConfirmationEmails(payload);
+  } catch (err) {
+    Logger.log('Failed to send RSVP confirmation emails: ' + err);
+    return { attempted: true, sent: 0, error: err.message };
+  }
+}
+
+function sendConfirmationEmails(payload) {
+  var recipients = getRecipientEmailsForPayload(payload);
+  if (recipients.length === 0) {
+    return { attempted: true, sent: 0, reason: 'no_recipients' };
+  }
+
+  var subject = CONFIRMATION_EMAIL_SUBJECT;
+  var htmlBody = buildConfirmationEmailHtml(payload);
+  var textBody = buildConfirmationEmailText(payload);
+
+  recipients.forEach(function (recipient) {
+    GmailApp.sendEmail(recipient, subject, textBody, {
+      htmlBody: htmlBody,
+      name: CONFIRMATION_EMAIL_SENDER_NAME
+    });
+  });
+
+  return { attempted: true, sent: recipients.length };
+}
+
+function buildConfirmationEmailText(payload) {
+  var lines = [];
+  lines.push('Thank you for your RSVP.');
+
+  if (payload && payload.invitationGroup) {
+    lines.push('Invitation: ' + payload.invitationGroup);
+  }
+
+  if (payload && Array.isArray(payload.guests)) {
+    payload.guests.forEach(function (guest) {
+      lines.push('');
+      lines.push((guest.guestName || 'Guest') + ':');
+
+      var rsvps = guest.rsvps || {};
+      RESPONSE_EVENT_COLUMNS.forEach(function (eventName) {
+        if (rsvps[eventName]) {
+          lines.push('- ' + eventName + ': ' + rsvps[eventName]);
+        }
+      });
+
+      if (guest.mealChoice) {
+        lines.push('- Meal: ' + guest.mealChoice);
+      }
+
+      if (guest.hospitalityNeeded) {
+        lines.push('- Home hospitality needed: ' + guest.hospitalityNeeded);
+      }
+    });
+  }
+
+  if (payload && payload.message) {
+    lines.push('');
+    lines.push('Message: ' + payload.message);
+  }
+
+  lines.push('');
+  lines.push('We look forward to celebrating with you.');
+  return lines.join('\n');
+}
+
+function buildConfirmationEmailHtml(payload) {
+  var html = [];
+  html.push('<p>Thank you for your RSVP.</p>');
+
+  if (payload && payload.invitationGroup) {
+    html.push('<p><strong>Invitation:</strong> ' + escapeHtml(payload.invitationGroup) + '</p>');
+  }
+
+  if (payload && Array.isArray(payload.guests)) {
+    payload.guests.forEach(function (guest) {
+      html.push('<h3 style="margin-bottom: 8px;">' + escapeHtml(guest.guestName || 'Guest') + '</h3>');
+      html.push('<ul style="margin-top: 0;">');
+
+      var rsvps = guest.rsvps || {};
+      RESPONSE_EVENT_COLUMNS.forEach(function (eventName) {
+        if (rsvps[eventName]) {
+          html.push('<li><strong>' + escapeHtml(eventName) + ':</strong> ' + escapeHtml(rsvps[eventName]) + '</li>');
+        }
+      });
+
+      if (guest.mealChoice) {
+        html.push('<li><strong>Meal:</strong> ' + escapeHtml(guest.mealChoice) + '</li>');
+      }
+
+      if (guest.hospitalityNeeded) {
+        html.push('<li><strong>Home hospitality needed:</strong> ' + escapeHtml(guest.hospitalityNeeded) + '</li>');
+      }
+
+      html.push('</ul>');
+    });
+  }
+
+  if (payload && payload.message) {
+    html.push('<p><strong>Message:</strong> ' + escapeHtml(payload.message) + '</p>');
+  }
+
+  html.push('<p>We look forward to celebrating with you.</p>');
+  return html.join('');
+}
+
+function getRecipientEmailsForPayload(payload) {
+  var recipients = Array.isArray(CONFIRMATION_EMAIL_RECIPIENTS)
+    ? CONFIRMATION_EMAIL_RECIPIENTS.slice()
+    : [];
+
+  var submittedEmail = normalizeSubmittedEmail(payload && payload.email);
+  if (submittedEmail) {
+    recipients.unshift(submittedEmail);
+  }
+
+  return dedupeEmails(recipients);
+}
+
+function normalizeSubmittedEmail(email) {
+  var value = String(email || '').trim().toLowerCase();
+  if (!value) return '';
+  return /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(value) ? value : '';
+}
+
+function dedupeEmails(emails) {
+  var result = [];
+  var seen = {};
+
+  (emails || []).forEach(function (email) {
+    var normalized = String(email || '').trim().toLowerCase();
+    if (!normalized) return;
+    if (seen[normalized]) return;
+    seen[normalized] = true;
+    result.push(normalized);
+  });
+
+  return result;
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 /**
@@ -391,8 +569,9 @@ function pruneUnexpectedResponseColumns(sheet, expectedHeader) {
  * Expects payload:
  * {
  *   invitationGroup: string,
+ *   email: string,
  *   message: string,
- *   guests: [{ guestId, guestName, rsvps: { [eventName]: 'Attending'|'Not Attending' }, mealChoice }]
+ *   guests: [{ guestId, guestName, rsvps: { [eventName]: 'Attending'|'Not Attending' }, mealChoice, hospitalityNeeded }]
  * }
  * Upserts one row per guest into Responses, keyed by GuestID.
  */
@@ -433,6 +612,7 @@ function submitRsvp(payload) {
     });
 
     row[header.indexOf('MealChoice')] = guestRsvp.mealChoice || '';
+    row[header.indexOf('HospitalityNeeded')] = guestRsvp.hospitalityNeeded || '';
     row[header.indexOf('Message')] = message;
 
     var existingRowIndex = -1;

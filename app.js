@@ -3,7 +3,7 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw2tfP_tJIYvGfM
 
 // Maps raw event column headers from the Google Sheet to user-friendly display names.
 const EVENT_DISPLAY_NAMES = {
-  'fri night': 'Kabbalat Shabbat and Dinner - Friday, October 23rd @ TBD',
+  'fri night': 'Kabbalat Shabbat and Dinner - Friday, October 23rd @ 6 pm',
   'saturday': 'Aufruf - Saturday, October 24th @ 9:30 am',
   'sunday': 'Wedding - Sunday, October 25th @ 3 pm',
 };
@@ -33,17 +33,23 @@ const rsvpSection = document.getElementById('rsvp-section');
 const invitationTitle = document.getElementById('invitation-title');
 const guestsContainer = document.getElementById('guests-container');
 const rsvpForm = document.getElementById('rsvp-form');
+const emailInput = document.getElementById('email-input');
 const messageInput = document.getElementById('message-input');
 const submitButton = document.getElementById('submit-button');
 const submitMessage = document.getElementById('submit-message');
 const rsvpSummary = document.getElementById('rsvp-summary');
+const rsvpSummaryContent = document.getElementById('rsvp-summary-content');
 const continueButton = document.getElementById('continue-button');
 
 let currentInvitation = null;
 let lastWebsitePassword = null;
 
-function setMessage(el, text, type) {
-  el.textContent = text || '';
+function setMessage(el, text, type, isHtml) {
+  if (isHtml) {
+    el.innerHTML = text || '';
+  } else {
+    el.textContent = text || '';
+  }
   el.classList.remove('error', 'success');
   if (type) el.classList.add(type);
 }
@@ -70,7 +76,9 @@ function resetSections() {
   submitButton.disabled = false;
   optionsList.innerHTML = '';
   guestsContainer.innerHTML = '';
-  rsvpSummary.innerHTML = '';
+  emailInput.value = '';
+  rsvpSummaryContent.innerHTML = '';
+  rsvpSummary.open = false;
   rsvpSummary.classList.add('hidden');
   setMessage(submitMessage, '');
   continueButton.classList.add('hidden');
@@ -246,6 +254,34 @@ function buildEventCard(eventName, guests, invitation) {
     card.appendChild(mealSection);
   }
 
+  if (isFridayEvent(eventName) && guests.length > 0) {
+    const hospitalitySection = document.createElement('div');
+    hospitalitySection.className = 'hospitality-section';
+
+    const hospitalityQuestion = document.createElement('p');
+    hospitalityQuestion.className = 'hospitality-question';
+    hospitalityQuestion.textContent = 'Would you like home hospitality within walking distance of the Kriegel/Butler home?';
+    hospitalitySection.appendChild(hospitalityQuestion);
+
+    const hospitalityToggle = document.createElement('div');
+    hospitalityToggle.className = 'rsvp-toggle';
+
+    ['Yes', 'No'].forEach((choice) => {
+      const label = document.createElement('label');
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = 'hospitality-needed';
+      radio.value = choice;
+      radio.required = true;
+      label.appendChild(radio);
+      label.appendChild(document.createTextNode(choice));
+      hospitalityToggle.appendChild(label);
+    });
+
+    hospitalitySection.appendChild(hospitalityToggle);
+    card.appendChild(hospitalitySection);
+  }
+
   return card;
 }
 
@@ -253,6 +289,11 @@ function isWeddingEvent(eventName) {
   const rawName = String(eventName || '').trim().toLowerCase();
   const displayName = displayEventName(eventName).toLowerCase();
   return rawName === 'sunday' || displayName.includes('wedding');
+}
+
+function isFridayEvent(eventName) {
+  const rawName = String(eventName || '').trim().toLowerCase();
+  return rawName === 'fri night';
 }
 
 function slugify(text) {
@@ -263,8 +304,18 @@ async function handleSubmit(evt) {
   evt.preventDefault();
   if (!currentInvitation) return;
 
+  const submittedEmail = emailInput.value.trim();
+  if (!submittedEmail) {
+    setMessage(submitMessage, 'Please enter an email address.', 'error');
+    emailInput.focus();
+    return;
+  }
+
   submitButton.disabled = true;
   setMessage(submitMessage, 'Submitting…');
+
+  const hospitalityChecked = guestsContainer.querySelector('input[name="hospitality-needed"]:checked');
+  const hospitalityAnswer = hospitalityChecked ? hospitalityChecked.value : '';
 
   const guests = currentInvitation.guests.map((guestData) => {
     const guestId = guestData.guestId;
@@ -277,17 +328,20 @@ async function handleSubmit(evt) {
     });
 
     const mealSelect = guestsContainer.querySelector(`select[data-meal-guest-id="${cssEscape(String(guestId))}"]`);
+    const invitedFriday = guestData.events.some((eventName) => isFridayEvent(eventName));
 
     return {
       guestId,
       guestName: guestData.guestName,
       rsvps,
-      mealChoice: mealSelect ? mealSelect.value : ''
+      mealChoice: mealSelect ? mealSelect.value : '',
+      hospitalityNeeded: invitedFriday ? hospitalityAnswer : ''
     };
   });
 
   const payload = {
     invitationGroup: currentInvitation.invitationGroup,
+    email: submittedEmail,
     message: messageInput.value.trim(),
     guests
   };
@@ -302,9 +356,9 @@ async function handleSubmit(evt) {
     rsvpForm.classList.add('hidden');
     lastWebsitePassword = determinePassword(guests);
     const thankYouText = lastWebsitePassword
-      ? `Thank you! Your RSVP has been recorded. Your wedding website password is: ${lastWebsitePassword}`
+      ? `Thank you! Your RSVP has been recorded. Your wedding website password is: <strong>${lastWebsitePassword}</strong>`
       : 'Thank you! Your RSVP has been recorded.';
-    setMessage(submitMessage, thankYouText, 'success');
+    setMessage(submitMessage, thankYouText, 'success', true);
     showRsvpSummary(guests);
     continueButton.classList.remove('hidden');
   } catch (err) {
@@ -318,7 +372,7 @@ function cssEscape(value) {
 }
 
 function showRsvpSummary(guests) {
-  rsvpSummary.innerHTML = '';
+  rsvpSummaryContent.innerHTML = '';
 
   guests.forEach((guest) => {
     const card = document.createElement('div');
@@ -341,8 +395,14 @@ function showRsvpSummary(guests) {
       list.appendChild(li);
     }
 
+    if (guest.hospitalityNeeded) {
+      const li = document.createElement('li');
+      li.textContent = `Home hospitality needed: ${guest.hospitalityNeeded}`;
+      list.appendChild(li);
+    }
+
     card.appendChild(list);
-    rsvpSummary.appendChild(card);
+    rsvpSummaryContent.appendChild(card);
   });
 
   rsvpSummary.classList.remove('hidden');
@@ -358,7 +418,7 @@ function determinePassword(guests) {
     currentInvitation.guests.forEach((guest) => {
       guest.events.forEach((eventName) => {
         const lower = eventName.toLowerCase();
-        if (lower.includes('friday')) invitedFriday = true;
+        if (lower.includes('fri')) invitedFriday = true;
         if (lower.includes('saturday')) invitedSaturday = true;
       });
     });
