@@ -10,9 +10,7 @@
 // The two meal options offered to every guest. Edit as needed.
 var MEAL_OPTIONS = ['Apricot Glazed Salmon (gluten-free)', 'Wild Mushroom Strudel (dairy)'];
 
-// Password shown to guests after they submit their RSVP, so they can access
-// the wedding website. Edit as needed.
-var WEBSITE_PASSWORD = 'REPLACE_WITH_WEBSITE_PASSWORD';
+// Wedding website password is sent by the client in the RSVP payload.
 
 // Enables/disables RSVP confirmation emails sent through GmailApp.
 var SEND_CONFIRMATION_EMAILS = true;
@@ -20,6 +18,13 @@ var SEND_CONFIRMATION_EMAILS = true;
 // Confirmation email settings.
 var CONFIRMATION_EMAIL_SUBJECT = 'Your Wedding RSVP Confirmation';
 var CONFIRMATION_EMAIL_SENDER_NAME = 'Kriegel and Butler Wedding';
+var WEDDING_WEBSITE_URL = 'https://raquelandaaron.com';
+
+var EVENT_DISPLAY_NAMES = {
+  'fri night': 'Kabbalat Shabbat and Dinner - Friday, October 23rd @ 6 pm',
+  'saturday': 'Aufruf - Saturday, October 24th @ 9:30 am',
+  'sunday': 'Wedding - Sunday, October 25th @ 3 pm'
+};
 
 // Optional fixed recipients who should always receive a copy.
 // Example: ['you@example.com']
@@ -81,13 +86,18 @@ function doPost(e) {
     if (!submittedEmail) {
       throw new Error('A valid email address is required.');
     }
+    var submittedWebsitePassword = String((payload && payload.websitePassword) || '').trim();
+    if (!submittedWebsitePassword) {
+      throw new Error('A website password is required.');
+    }
     payload.email = submittedEmail;
+    payload.websitePassword = submittedWebsitePassword;
 
     submitRsvp(payload);
     var emailStatus = trySendConfirmationEmails(payload);
     return jsonResponse({
       success: true,
-      websitePassword: WEBSITE_PASSWORD,
+      websitePassword: payload.websitePassword,
       emailStatus: emailStatus
     });
   } catch (err) {
@@ -135,10 +145,15 @@ function sendConfirmationEmails(payload) {
 
 function buildConfirmationEmailText(payload) {
   var lines = [];
-  lines.push('Thank you for your RSVP.');
+  lines.push('Thank you for your RSVP!');
+  lines.push('Wedding website: raquelandaaron.com (' + WEDDING_WEBSITE_URL + ')');
 
   if (payload && payload.invitationGroup) {
     lines.push('Invitation: ' + payload.invitationGroup);
+  }
+
+  if (payload && payload.websitePassword) {
+    lines.push('Wedding website password: ' + payload.websitePassword);
   }
 
   if (payload && Array.isArray(payload.guests)) {
@@ -149,7 +164,7 @@ function buildConfirmationEmailText(payload) {
       var rsvps = guest.rsvps || {};
       RESPONSE_EVENT_COLUMNS.forEach(function (eventName) {
         if (rsvps[eventName]) {
-          lines.push('- ' + eventName + ': ' + rsvps[eventName]);
+          lines.push('- ' + displayEventNameForEmail(eventName) + ': ' + rsvps[eventName]);
         }
       });
 
@@ -168,49 +183,79 @@ function buildConfirmationEmailText(payload) {
     lines.push('Message: ' + payload.message);
   }
 
-  lines.push('');
-  lines.push('We look forward to celebrating with you.');
   return lines.join('\n');
 }
 
 function buildConfirmationEmailHtml(payload) {
   var html = [];
-  html.push('<p>Thank you for your RSVP.</p>');
+  html.push('<!doctype html>');
+  html.push('<html><body style="margin:0;padding:24px;background:#fffaf8;color:#33272a;font-family:\'Helvetica Neue\', Arial, sans-serif;">');
+  html.push('<div style="max-width:700px;margin:0 auto;background:#fffaf8;border:1px solid #ddd0cf;border-radius:12px;overflow:hidden;">');
+
+  html.push('<div style="text-align:center;padding:24px 20px;border-bottom:1px solid rgba(122, 92, 97, 0.16);">');
+  html.push('<p style="margin:0;font-family:Georgia, \"Times New Roman\", serif;letter-spacing:0.28em;text-transform:uppercase;font-size:18px;color:#5f4448;">Wedding RSVP Confirmation</p>');
+  html.push('</div>');
+
+  html.push('<div style="padding:20px 20px 8px;">');
+  html.push('<p style="margin:0 0 12px;">Thank you for your RSVP!</p>');
+
+  html.push('<div style="background:#ffffff;border:1px solid #ddd0cf;border-radius:8px;padding:16px;margin:0 0 16px;">');
+  html.push('<p style="margin:0 0 10px;"><strong>Wedding website:</strong> <a href="' + escapeHtml(WEDDING_WEBSITE_URL) + '" style="color:#5f4448;text-decoration:underline;">raquelandaaron.com</a></p>');
+
+  if (payload && payload.websitePassword) {
+    html.push('<p style="margin:0 0 12px;"><strong>Website password:</strong> <span style="display:inline-block;background:#f3e9e8;border:1px solid #ddd0cf;border-radius:6px;padding:3px 8px;">' + escapeHtml(payload.websitePassword) + '</span></p>');
+  }
+
+  html.push('<a href="' + escapeHtml(WEDDING_WEBSITE_URL) + '" style="display:inline-block;padding:10px 16px;border-radius:6px;background:#7a5c61;color:#ffffff;text-decoration:none;font-family:Georgia, \"Times New Roman\", serif;">Visit raquelandaaron.com</a>');
+  html.push('</div>');
 
   if (payload && payload.invitationGroup) {
-    html.push('<p><strong>Invitation:</strong> ' + escapeHtml(payload.invitationGroup) + '</p>');
+    html.push('<p style="margin:0 0 16px;"><strong>Invitation:</strong> ' + escapeHtml(payload.invitationGroup) + '</p>');
   }
 
   if (payload && Array.isArray(payload.guests)) {
     payload.guests.forEach(function (guest) {
-      html.push('<h3 style="margin-bottom: 8px;">' + escapeHtml(guest.guestName || 'Guest') + '</h3>');
-      html.push('<ul style="margin-top: 0;">');
+      html.push('<div style="border:1px solid #ddd0cf;border-radius:8px;padding:14px 16px;margin:0 0 12px;background:#ffffff;">');
+      html.push('<h3 style="margin:0 0 10px;font-size:17px;font-weight:600;">' + escapeHtml(guest.guestName || 'Guest') + '</h3>');
+      html.push('<ul style="margin:0;padding-left:18px;">');
 
       var rsvps = guest.rsvps || {};
       RESPONSE_EVENT_COLUMNS.forEach(function (eventName) {
         if (rsvps[eventName]) {
-          html.push('<li><strong>' + escapeHtml(eventName) + ':</strong> ' + escapeHtml(rsvps[eventName]) + '</li>');
+          html.push('<li style="margin:0 0 6px;"><strong>' + escapeHtml(displayEventNameForEmail(eventName)) + ':</strong> ' + escapeHtml(rsvps[eventName]) + '</li>');
         }
       });
 
       if (guest.mealChoice) {
-        html.push('<li><strong>Meal:</strong> ' + escapeHtml(guest.mealChoice) + '</li>');
+        html.push('<li style="margin:0 0 6px;"><strong>Meal:</strong> ' + escapeHtml(guest.mealChoice) + '</li>');
       }
 
       if (guest.hospitalityNeeded) {
-        html.push('<li><strong>Home hospitality needed:</strong> ' + escapeHtml(guest.hospitalityNeeded) + '</li>');
+        html.push('<li style="margin:0;"><strong>Home hospitality needed:</strong> ' + escapeHtml(guest.hospitalityNeeded) + '</li>');
       }
 
       html.push('</ul>');
+      html.push('</div>');
     });
   }
 
   if (payload && payload.message) {
-    html.push('<p><strong>Message:</strong> ' + escapeHtml(payload.message) + '</p>');
+    html.push('<div style="border:1px solid #ddd0cf;border-radius:8px;padding:14px 16px;margin:0 0 12px;background:#ffffff;">');
+    html.push('<p style="margin:0 0 8px;font-weight:600;">Message or questions for the couple</p>');
+    html.push('<p style="margin:0;white-space:pre-wrap;">' + escapeHtml(payload.message) + '</p>');
+    html.push('</div>');
   }
 
-  html.push('<p>We look forward to celebrating with you.</p>');
+  html.push('<p style="margin:10px 0 0;color:#5f4448;">We look forward to celebrating with you.</p>');
+  html.push('</div>');
+  html.push('</div>');
+  html.push('</body></html>');
   return html.join('');
+}
+
+function displayEventNameForEmail(eventName) {
+  var key = String(eventName || '').trim().toLowerCase();
+  return EVENT_DISPLAY_NAMES[key] || String(eventName || '');
 }
 
 function getRecipientEmailsForPayload(payload) {

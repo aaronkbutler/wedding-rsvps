@@ -342,6 +342,7 @@ async function handleSubmit(evt) {
   const payload = {
     invitationGroup: currentInvitation.invitationGroup,
     email: submittedEmail,
+    websitePassword: determinePassword(guests),
     message: messageInput.value.trim(),
     guests
   };
@@ -354,10 +355,10 @@ async function handleSubmit(evt) {
       return;
     }
     rsvpForm.classList.add('hidden');
-    lastWebsitePassword = determinePassword(guests);
+    lastWebsitePassword = payload.websitePassword;
     const thankYouText = lastWebsitePassword
-      ? `Thank you! Your RSVP has been recorded. Your wedding website password is: <strong>${lastWebsitePassword}</strong>`
-      : 'Thank you! Your RSVP has been recorded.';
+      ? `Thank you! Your RSVP has been recorded and a copy has been sent to your email. Your wedding website password is: <strong>${lastWebsitePassword}</strong>`
+      : 'Thank you! Your RSVP has been recorded and a copy has been sent to your email.';
     setMessage(submitMessage, thankYouText, 'success', true);
     showRsvpSummary(guests);
     continueButton.classList.remove('hidden');
