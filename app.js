@@ -32,7 +32,6 @@ const optionsSection = document.getElementById('options-section');
 const optionsList = document.getElementById('options-list');
 
 const rsvpSection = document.getElementById('rsvp-section');
-const rsvpBackButton = document.getElementById('rsvp-back-button');
 const invitationTitle = document.getElementById('invitation-title');
 const guestsContainer = document.getElementById('guests-container');
 const rsvpForm = document.getElementById('rsvp-form');
@@ -97,6 +96,25 @@ function resetSections() {
   lastWebsitePassword = null;
 }
 
+function resetRsvpResults() {
+  optionsSection.classList.add('hidden');
+  rsvpSection.classList.add('hidden');
+  rsvpForm.classList.remove('hidden');
+  submitButton.disabled = false;
+  optionsList.innerHTML = '';
+  guestsContainer.innerHTML = '';
+  invitationTitle.textContent = '';
+  emailInput.value = '';
+  messageInput.value = '';
+  rsvpSummaryContent.innerHTML = '';
+  rsvpSummary.open = false;
+  rsvpSummary.classList.add('hidden');
+  setMessage(submitMessage, '');
+  continueButton.classList.add('hidden');
+  currentInvitation = null;
+  lastWebsitePassword = null;
+}
+
 async function handleSearch() {
   const name = nameInput.value.trim();
   if (!name) {
@@ -104,8 +122,8 @@ async function handleSearch() {
     return;
   }
 
+  resetRsvpResults();
   setMessage(searchMessage, 'Searching…');
-  resetSections();
   searchButton.disabled = true;
 
   try {
@@ -542,4 +560,3 @@ rsvpForm.addEventListener('submit', handleSubmit);
 continueButton.addEventListener('click', handleContinue);
 loginBackButton.addEventListener('click', handleBackToLanding);
 searchBackButton.addEventListener('click', handleBackToLanding);
-rsvpBackButton.addEventListener('click', handleBackToLanding);
