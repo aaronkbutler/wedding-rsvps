@@ -231,7 +231,7 @@ function buildConfirmationEmailHtml(payload) {
 
     html.push('</ul>');
     html.push('</div>');
-  }
+  });
 
   if (payload && payload.message) {
     html.push('<div style="border:1px solid #ddd0cf;border-radius:8px;padding:14px 16px;margin:0 0 12px;background:#ffffff;">');
