@@ -167,7 +167,7 @@ function buildConfirmationEmailText(payload) {
 
       eventSummary.entries.forEach(function (entry) {
         var detail = entry.response;
-        if (isWeddingEventName(eventSummary.eventName) && entry.mealChoice) {
+        if (isWeddingEventName(eventSummary.eventName) && entry.response === 'Attending' && entry.mealChoice) {
           detail += ' | Meal: ' + entry.mealChoice;
         }
         if (isFridayEventName(eventSummary.eventName) && entry.hospitalityNeeded) {
@@ -219,7 +219,7 @@ function buildConfirmationEmailHtml(payload) {
 
     eventSummary.entries.forEach(function (entry) {
       var details = [escapeHtml(entry.response)];
-      if (isWeddingEventName(eventSummary.eventName) && entry.mealChoice) {
+      if (isWeddingEventName(eventSummary.eventName) && entry.response === 'Attending' && entry.mealChoice) {
         details.push('Meal: ' + escapeHtml(entry.mealChoice));
       }
       if (isFridayEventName(eventSummary.eventName) && entry.hospitalityNeeded) {

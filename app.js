@@ -231,7 +231,7 @@ function buildEventCard(eventName, guests, invitation) {
       select.className = 'meal-select';
       select.id = `meal-${guest.guestId}`;
       select.dataset.mealGuestId = guest.guestId;
-      select.required = true;
+      select.required = false;
 
       const placeholder = document.createElement('option');
       placeholder.value = '';
@@ -248,6 +248,24 @@ function buildEventCard(eventName, guests, invitation) {
       });
 
       mealField.appendChild(select);
+
+      const groupName = `rsvp-${guest.guestId}-${slugify(eventName)}`;
+      const updateMealVisibility = () => {
+        const attendingRadio = card.querySelector(`input[name="${cssEscape(groupName)}"][value="Attending"]`);
+        const isAttending = !!(attendingRadio && attendingRadio.checked);
+        mealField.classList.toggle('hidden', !isAttending);
+        select.required = isAttending;
+        if (!isAttending) {
+          select.selectedIndex = 0;
+        }
+      };
+
+      const rsvpRadios = card.querySelectorAll(`input[name="${cssEscape(groupName)}"]`);
+      rsvpRadios.forEach((radio) => {
+        radio.addEventListener('change', updateMealVisibility);
+      });
+
+      updateMealVisibility();
       mealSection.appendChild(mealField);
     });
 
@@ -328,13 +346,14 @@ async function handleSubmit(evt) {
     });
 
     const mealSelect = guestsContainer.querySelector(`select[data-meal-guest-id="${cssEscape(String(guestId))}"]`);
+    const attendingWedding = guestData.events.some((eventName) => isWeddingEvent(eventName) && rsvps[eventName] === 'Attending');
     const invitedFriday = guestData.events.some((eventName) => isFridayEvent(eventName));
 
     return {
       guestId,
       guestName: guestData.guestName,
       rsvps,
-      mealChoice: mealSelect ? mealSelect.value : '',
+      mealChoice: attendingWedding && mealSelect ? mealSelect.value : '',
       hospitalityNeeded: invitedFriday ? hospitalityAnswer : ''
     };
   });
@@ -386,7 +405,7 @@ function showRsvpSummary(guests) {
         if (!response) return null;
 
         const details = [response];
-        if (isWeddingEvent(eventName) && guest.mealChoice) {
+        if (isWeddingEvent(eventName) && response === 'Attending' && guest.mealChoice) {
           details.push(`Meal: ${guest.mealChoice}`);
         }
         if (isFridayEvent(eventName) && guest.hospitalityNeeded) {
