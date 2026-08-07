@@ -212,7 +212,16 @@ function buildEventCard(eventName, guests, invitation) {
 
   if (isWeddingEvent(eventName) && guests.length > 0) {
     const mealSection = document.createElement('div');
-    mealSection.className = 'meal-section';
+    mealSection.className = 'meal-section hidden';
+
+    const updateMealSectionVisibility = () => {
+      const hasAnyAttending = guests.some((guest) => {
+        const groupName = `rsvp-${guest.guestId}-${slugify(eventName)}`;
+        const attendingRadio = card.querySelector(`input[name="${cssEscape(groupName)}"][value="Attending"]`);
+        return !!(attendingRadio && attendingRadio.checked);
+      });
+      mealSection.classList.toggle('hidden', !hasAnyAttending);
+    };
 
     const mealHeading = document.createElement('h4');
     mealHeading.textContent = 'Meal choices';
@@ -258,6 +267,7 @@ function buildEventCard(eventName, guests, invitation) {
         if (!isAttending) {
           select.selectedIndex = 0;
         }
+        updateMealSectionVisibility();
       };
 
       const rsvpRadios = card.querySelectorAll(`input[name="${cssEscape(groupName)}"]`);
@@ -269,6 +279,7 @@ function buildEventCard(eventName, guests, invitation) {
       mealSection.appendChild(mealField);
     });
 
+    updateMealSectionVisibility();
     card.appendChild(mealSection);
   }
 
