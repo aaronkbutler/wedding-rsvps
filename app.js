@@ -14,62 +14,12 @@ const EVENT_DESCRIPTIONS = {
   'sunday': 'Ceremony and reception at Temple Emanuel - 385 Ward Street, Newton, MA 02459',
 };
 
-const EVENT_ADDRESS_LINKS = [
-  {
-    pattern: /88 Cottage Street, Sharon,? MA 02067/,
-    url: 'https://maps.app.goo.gl/MGwwPGp1pxbT1xM66'
-  },
-  {
-    pattern: /385 Ward Street, Newton, MA 02459/,
-    url: 'https://maps.app.goo.gl/TwF3dpxe68kJtfry9'
-  }
-];
-
 function displayEventName(eventName) {
   return EVENT_DISPLAY_NAMES[eventName.toLowerCase()] || eventName;
 }
 
 function displayEventDescription(eventName) {
   return EVENT_DESCRIPTIONS[eventName.toLowerCase()] || '';
-}
-
-function appendEventDescriptionWithAddressLink(container, descriptionText) {
-  const matchConfig = EVENT_ADDRESS_LINKS.find((entry) => entry.pattern.test(descriptionText));
-  if (!matchConfig) {
-    container.textContent = descriptionText;
-    return;
-  }
-
-  const match = descriptionText.match(matchConfig.pattern);
-  if (!match) {
-    container.textContent = descriptionText;
-    return;
-  }
-
-  const addressText = match[0];
-  const startIndex = match.index || 0;
-  const before = descriptionText.slice(0, startIndex);
-  const after = descriptionText.slice(startIndex + addressText.length);
-
-  if (before) {
-    container.appendChild(document.createTextNode(before));
-  }
-
-  const link = document.createElement('a');
-  link.className = 'event-address-link';
-  link.href = matchConfig.url;
-  link.target = '_blank';
-  link.rel = 'noopener noreferrer';
-  link.textContent = addressText;
-  link.addEventListener('click', (evt) => {
-    evt.preventDefault();
-    window.open(matchConfig.url, '_blank', 'noopener,noreferrer');
-  });
-  container.appendChild(link);
-
-  if (after) {
-    container.appendChild(document.createTextNode(after));
-  }
 }
 
 const landingSection = document.getElementById('landing-section');
@@ -273,7 +223,7 @@ function buildEventCard(eventName, guests, invitation) {
   if (eventDescription) {
     const description = document.createElement('p');
     description.className = 'event-description';
-    appendEventDescriptionWithAddressLink(description, eventDescription);
+    description.textContent = eventDescription;
     card.appendChild(description);
   }
 
@@ -485,7 +435,7 @@ async function handleSubmit(evt) {
     rsvpForm.classList.add('hidden');
     lastWebsitePassword = payload.websitePassword;
     const thankYouText = lastWebsitePassword
-      ? `Thank you! Your RSVP has been recorded and a copy has been sent to your email.<br>Your wedding website password is: <strong>${lastWebsitePassword}</strong>`
+      ? `Thank you! Your RSVP has been recorded and a copy has been sent to your email.<br> Your wedding website password is: <strong>${lastWebsitePassword}</strong>`
       : 'Thank you! Your RSVP has been recorded and a copy has been sent to your email.';
     setMessage(submitMessage, thankYouText, 'success', true);
     showRsvpSummary(guests);
