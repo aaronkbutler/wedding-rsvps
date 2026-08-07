@@ -8,8 +8,18 @@ const EVENT_DISPLAY_NAMES = {
   'sunday': 'Wedding - Sunday, October 25th @ 3 pm',
 };
 
+const EVENT_DESCRIPTIONS = {
+  'fri night': 'Kabbalat Shabbat followed by Shabbat dinner at the Kriegel/Butler (heated) Tent - 88 Cottage Street, Sharon MA 02067',
+  'saturday': 'Shabbat morning davening followed by a kiddush lunch at the Kriegel/Butler (heated) Tent - 88 Cottage Street, Sharon, MA 02067 - Open Tent until Shabbat ends. Come shmooze!',
+  'sunday': 'The main event at Temple Emanuel - 385 Ward Street, Newton, MA 02459',
+};
+
 function displayEventName(eventName) {
   return EVENT_DISPLAY_NAMES[eventName.toLowerCase()] || eventName;
+}
+
+function displayEventDescription(eventName) {
+  return EVENT_DESCRIPTIONS[eventName.toLowerCase()] || '';
 }
 
 const landingSection = document.getElementById('landing-section');
@@ -208,6 +218,14 @@ function buildEventCard(eventName, guests, invitation) {
   const heading = document.createElement('h3');
   heading.textContent = displayEventName(eventName);
   card.appendChild(heading);
+
+  const eventDescription = displayEventDescription(eventName);
+  if (eventDescription) {
+    const description = document.createElement('p');
+    description.className = 'event-description';
+    description.textContent = eventDescription;
+    card.appendChild(description);
+  }
 
   guests.forEach((guest) => {
     const row = document.createElement('div');

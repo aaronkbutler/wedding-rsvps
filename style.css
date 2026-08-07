@@ -190,6 +190,13 @@ button:disabled {
   margin-bottom: 18px;
 }
 
+.event-description {
+  margin: -8px 0 14px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #5f4448;
+}
+
 .event-row {
   display: flex;
   align-items: center;
