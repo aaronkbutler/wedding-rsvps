@@ -156,25 +156,26 @@ function buildConfirmationEmailText(payload) {
     lines.push('Wedding website password: ' + payload.websitePassword);
   }
 
-  if (payload && Array.isArray(payload.guests)) {
-    payload.guests.forEach(function (guest) {
+  var eventSummaries = buildEventSummaryForEmail(payload);
+  if (eventSummaries.length > 0) {
+    lines.push('');
+    lines.push('RSVPs by event:');
+
+    eventSummaries.forEach(function (eventSummary) {
       lines.push('');
-      lines.push((guest.guestName || 'Guest') + ':');
+      lines.push(eventSummary.displayName + ':');
 
-      var rsvps = guest.rsvps || {};
-      RESPONSE_EVENT_COLUMNS.forEach(function (eventName) {
-        if (rsvps[eventName]) {
-          lines.push('- ' + displayEventNameForEmail(eventName) + ': ' + rsvps[eventName]);
+      eventSummary.entries.forEach(function (entry) {
+        var detail = entry.response;
+        if (isWeddingEventName(eventSummary.eventName) && entry.mealChoice) {
+          detail += ' | Meal: ' + entry.mealChoice;
         }
+        if (isFridayEventName(eventSummary.eventName) && entry.hospitalityNeeded) {
+          detail += ' | Home hospitality needed: ' + entry.hospitalityNeeded;
+        }
+
+        lines.push('- ' + entry.guestName + ': ' + detail);
       });
-
-      if (guest.mealChoice) {
-        lines.push('- Meal: ' + guest.mealChoice);
-      }
-
-      if (guest.hospitalityNeeded) {
-        lines.push('- Home hospitality needed: ' + guest.hospitalityNeeded);
-      }
     });
   }
 
@@ -183,6 +184,11 @@ function buildConfirmationEmailText(payload) {
     lines.push('Message: ' + payload.message);
   }
 
+  lines.push('');
+  lines.push(hasAnyAttendingResponse(payload)
+    ? 'We look forward to celebrating with you.'
+    : "We'll miss you but you'll be with us in spirit!");
+
   return lines.join('\n');
 }
 
@@ -190,13 +196,7 @@ function buildConfirmationEmailHtml(payload) {
   var html = [];
   html.push('<!doctype html>');
   html.push('<html><body style="margin:0;padding:24px;background:#fffaf8;color:#33272a;font-family:\'Helvetica Neue\', Arial, sans-serif;">');
-  html.push('<div style="max-width:700px;margin:0 auto;background:#fffaf8;border:1px solid #ddd0cf;border-radius:12px;overflow:hidden;">');
-
-  html.push('<div style="text-align:center;padding:24px 20px;border-bottom:1px solid rgba(122, 92, 97, 0.16);">');
-  html.push('<p style="margin:0;font-family:Georgia, \"Times New Roman\", serif;letter-spacing:0.28em;text-transform:uppercase;font-size:18px;color:#5f4448;">Wedding RSVP Confirmation</p>');
-  html.push('</div>');
-
-  html.push('<div style="padding:20px 20px 8px;">');
+  html.push('<div style="max-width:700px;margin:0 auto;">');
   html.push('<p style="margin:0 0 12px;">Thank you for your RSVP!</p>');
 
   html.push('<div style="background:#ffffff;border:1px solid #ddd0cf;border-radius:8px;padding:16px;margin:0 0 16px;">');
@@ -205,38 +205,32 @@ function buildConfirmationEmailHtml(payload) {
   if (payload && payload.websitePassword) {
     html.push('<p style="margin:0 0 12px;"><strong>Website password:</strong> <span style="display:inline-block;background:#f3e9e8;border:1px solid #ddd0cf;border-radius:6px;padding:3px 8px;">' + escapeHtml(payload.websitePassword) + '</span></p>');
   }
-
-  html.push('<a href="' + escapeHtml(WEDDING_WEBSITE_URL) + '" style="display:inline-block;padding:10px 16px;border-radius:6px;background:#7a5c61;color:#ffffff;text-decoration:none;font-family:Georgia, \"Times New Roman\", serif;">Visit raquelandaaron.com</a>');
   html.push('</div>');
 
   if (payload && payload.invitationGroup) {
     html.push('<p style="margin:0 0 16px;"><strong>Invitation:</strong> ' + escapeHtml(payload.invitationGroup) + '</p>');
   }
 
-  if (payload && Array.isArray(payload.guests)) {
-    payload.guests.forEach(function (guest) {
-      html.push('<div style="border:1px solid #ddd0cf;border-radius:8px;padding:14px 16px;margin:0 0 12px;background:#ffffff;">');
-      html.push('<h3 style="margin:0 0 10px;font-size:17px;font-weight:600;">' + escapeHtml(guest.guestName || 'Guest') + '</h3>');
-      html.push('<ul style="margin:0;padding-left:18px;">');
+  var eventSummaries = buildEventSummaryForEmail(payload);
+  eventSummaries.forEach(function (eventSummary) {
+    html.push('<div style="border:1px solid #ddd0cf;border-radius:8px;padding:14px 16px;margin:0 0 12px;background:#ffffff;">');
+    html.push('<h3 style="margin:0 0 10px;font-size:17px;font-weight:600;">' + escapeHtml(eventSummary.displayName) + '</h3>');
+    html.push('<ul style="margin:0;padding-left:18px;">');
 
-      var rsvps = guest.rsvps || {};
-      RESPONSE_EVENT_COLUMNS.forEach(function (eventName) {
-        if (rsvps[eventName]) {
-          html.push('<li style="margin:0 0 6px;"><strong>' + escapeHtml(displayEventNameForEmail(eventName)) + ':</strong> ' + escapeHtml(rsvps[eventName]) + '</li>');
-        }
-      });
-
-      if (guest.mealChoice) {
-        html.push('<li style="margin:0 0 6px;"><strong>Meal:</strong> ' + escapeHtml(guest.mealChoice) + '</li>');
+    eventSummary.entries.forEach(function (entry) {
+      var details = [escapeHtml(entry.response)];
+      if (isWeddingEventName(eventSummary.eventName) && entry.mealChoice) {
+        details.push('Meal: ' + escapeHtml(entry.mealChoice));
+      }
+      if (isFridayEventName(eventSummary.eventName) && entry.hospitalityNeeded) {
+        details.push('Home hospitality needed: ' + escapeHtml(entry.hospitalityNeeded));
       }
 
-      if (guest.hospitalityNeeded) {
-        html.push('<li style="margin:0;"><strong>Home hospitality needed:</strong> ' + escapeHtml(guest.hospitalityNeeded) + '</li>');
-      }
-
-      html.push('</ul>');
-      html.push('</div>');
+      html.push('<li style="margin:0 0 6px;"><strong>' + escapeHtml(entry.guestName) + ':</strong> ' + details.join(' | ') + '</li>');
     });
+
+    html.push('</ul>');
+    html.push('</div>');
   }
 
   if (payload && payload.message) {
@@ -246,8 +240,10 @@ function buildConfirmationEmailHtml(payload) {
     html.push('</div>');
   }
 
-  html.push('<p style="margin:10px 0 0;color:#5f4448;">We look forward to celebrating with you.</p>');
-  html.push('</div>');
+  var closingMessage = hasAnyAttendingResponse(payload)
+    ? 'We look forward to celebrating with you.'
+    : "We'll miss you but you'll be with us in spirit!";
+  html.push('<p style="margin:10px 0 0;color:#5f4448;">' + escapeHtml(closingMessage) + '</p>');
   html.push('</div>');
   html.push('</body></html>');
   return html.join('');
@@ -256,6 +252,72 @@ function buildConfirmationEmailHtml(payload) {
 function displayEventNameForEmail(eventName) {
   var key = String(eventName || '').trim().toLowerCase();
   return EVENT_DISPLAY_NAMES[key] || String(eventName || '');
+}
+
+function buildEventSummaryForEmail(payload) {
+  var guests = (payload && Array.isArray(payload.guests)) ? payload.guests : [];
+  var groupedByEvent = {};
+
+  RESPONSE_EVENT_COLUMNS.forEach(function (eventName) {
+    groupedByEvent[eventName] = [];
+  });
+
+  guests.forEach(function (guest) {
+    var guestName = (guest && guest.guestName) ? guest.guestName : 'Guest';
+    var rsvps = (guest && guest.rsvps) ? guest.rsvps : {};
+
+    RESPONSE_EVENT_COLUMNS.forEach(function (eventName) {
+      var response = rsvps[eventName];
+      if (!response) return;
+
+      groupedByEvent[eventName].push({
+        guestName: guestName,
+        response: response,
+        mealChoice: guest.mealChoice || '',
+        hospitalityNeeded: guest.hospitalityNeeded || ''
+      });
+    });
+  });
+
+  var summaries = [];
+  RESPONSE_EVENT_COLUMNS.forEach(function (eventName) {
+    if (!groupedByEvent[eventName] || groupedByEvent[eventName].length === 0) return;
+
+    summaries.push({
+      eventName: eventName,
+      displayName: displayEventNameForEmail(eventName),
+      entries: groupedByEvent[eventName]
+    });
+  });
+
+  return summaries;
+}
+
+function hasAnyAttendingResponse(payload) {
+  var guests = (payload && Array.isArray(payload.guests)) ? payload.guests : [];
+
+  for (var i = 0; i < guests.length; i++) {
+    var rsvps = (guests[i] && guests[i].rsvps) ? guests[i].rsvps : {};
+    for (var j = 0; j < RESPONSE_EVENT_COLUMNS.length; j++) {
+      var eventName = RESPONSE_EVENT_COLUMNS[j];
+      var response = String(rsvps[eventName] || '').trim().toLowerCase();
+      if (response === 'attending') {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+function isWeddingEventName(eventName) {
+  var key = String(eventName || '').trim().toLowerCase();
+  return key === 'sunday' || key.indexOf('wedding') !== -1;
+}
+
+function isFridayEventName(eventName) {
+  var key = String(eventName || '').trim().toLowerCase();
+  return key === 'fri night' || key.indexOf('friday') !== -1 || key.indexOf('fri') !== -1;
 }
 
 function getRecipientEmailsForPayload(payload) {

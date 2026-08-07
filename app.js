@@ -357,7 +357,7 @@ async function handleSubmit(evt) {
     rsvpForm.classList.add('hidden');
     lastWebsitePassword = payload.websitePassword;
     const thankYouText = lastWebsitePassword
-      ? `Thank you! Your RSVP has been recorded and a copy has been sent to your email. Your wedding website password is: <strong>${lastWebsitePassword}</strong>`
+      ? `Thank you! Your RSVP has been recorded and a copy has been sent to your email.<br>Your wedding website password is: <strong>${lastWebsitePassword}</strong>`
       : 'Thank you! Your RSVP has been recorded and a copy has been sent to your email.';
     setMessage(submitMessage, thankYouText, 'success', true);
     showRsvpSummary(guests);
@@ -375,32 +375,46 @@ function cssEscape(value) {
 function showRsvpSummary(guests) {
   rsvpSummaryContent.innerHTML = '';
 
-  guests.forEach((guest) => {
+  const orderedEventNames = currentInvitation && Array.isArray(currentInvitation.eventNames)
+    ? currentInvitation.eventNames
+    : [];
+
+  orderedEventNames.forEach((eventName) => {
+    const eventEntries = guests
+      .map((guest) => {
+        const response = guest.rsvps ? guest.rsvps[eventName] : '';
+        if (!response) return null;
+
+        const details = [response];
+        if (isWeddingEvent(eventName) && guest.mealChoice) {
+          details.push(`Meal: ${guest.mealChoice}`);
+        }
+        if (isFridayEvent(eventName) && guest.hospitalityNeeded) {
+          details.push(`Home hospitality needed: ${guest.hospitalityNeeded}`);
+        }
+
+        return {
+          guestName: guest.guestName,
+          detailText: details.join(' | ')
+        };
+      })
+      .filter(Boolean);
+
+    if (eventEntries.length === 0) return;
+
     const card = document.createElement('div');
     card.className = 'summary-card';
 
     const heading = document.createElement('h3');
-    heading.textContent = guest.guestName;
+    heading.textContent = displayEventName(eventName);
     card.appendChild(heading);
 
     const list = document.createElement('ul');
-    Object.entries(guest.rsvps).forEach(([eventName, response]) => {
+    eventEntries.forEach((entry) => {
       const li = document.createElement('li');
-      li.textContent = `${displayEventName(eventName)}: ${response}`;
+      li.textContent = `${entry.guestName}: ${entry.detailText}`;
       list.appendChild(li);
     });
-
-    if (guest.mealChoice) {
-      const li = document.createElement('li');
-      li.textContent = `Meal: ${guest.mealChoice}`;
-      list.appendChild(li);
-    }
-
-    if (guest.hospitalityNeeded) {
-      const li = document.createElement('li');
-      li.textContent = `Home hospitality needed: ${guest.hospitalityNeeded}`;
-      list.appendChild(li);
-    }
 
     card.appendChild(list);
     rsvpSummaryContent.appendChild(card);
