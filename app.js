@@ -9,7 +9,7 @@ const EVENT_DISPLAY_NAMES = {
 };
 
 const EVENT_DESCRIPTIONS = {
-  'fri night': 'At the Kriegel/Butler (heated) tent - 88 Cottage Street, Sharon MA 02067',
+  'fri night': 'At the Kriegel/Butler (heated) tent - 88 Cottage Street, Sharon, MA 02067',
   'saturday': 'Davening followed by kiddush lunch at the Kriegel/Butler (heated) tent - 88 Cottage Street, Sharon, MA 02067.\nOpen tent until Shabbat ends, come shmooze!',
   'sunday': 'Ceremony and reception at Temple Emanuel - 385 Ward Street, Newton, MA 02459',
 };
@@ -17,11 +17,11 @@ const EVENT_DESCRIPTIONS = {
 const EVENT_ADDRESS_LINKS = [
   {
     pattern: /88 Cottage Street, Sharon,? MA 02067/,
-    url: 'https://share.google/DNuqEihVdpBUv4Kq1'
+    url: 'https://maps.app.goo.gl/MGwwPGp1pxbT1xM66'
   },
   {
     pattern: /385 Ward Street, Newton, MA 02459/,
-    url: 'https://share.google/vCLpeA5kHFBKNAueA'
+    url: 'https://maps.app.goo.gl/TwF3dpxe68kJtfry9'
   }
 ];
 
