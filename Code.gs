@@ -16,7 +16,7 @@ var MEAL_OPTIONS = ['Apricot Glazed Salmon (gluten-free)', 'Wild Mushroom Strude
 var SEND_CONFIRMATION_EMAILS = true;
 
 // Confirmation email settings.
-var CONFIRMATION_EMAIL_SUBJECT = 'Raquel and Aaron's Wedding RSVP Confirmation';
+var CONFIRMATION_EMAIL_SUBJECT = 'Raquel and Aaron\'s Wedding RSVP Confirmation';
 var CONFIRMATION_EMAIL_SENDER_NAME = 'Raquel and Aaron';
 var WEDDING_WEBSITE_URL = 'https://raquelandaaron.com';
 
