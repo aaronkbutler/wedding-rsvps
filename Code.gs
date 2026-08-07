@@ -184,11 +184,6 @@ function buildConfirmationEmailText(payload) {
     lines.push('Message: ' + payload.message);
   }
 
-  lines.push('');
-  lines.push(hasAnyAttendingResponse(payload)
-    ? 'We look forward to celebrating with you!'
-    : "We'll miss you but you'll be with us in spirit!");
-
   return lines.join('\n');
 }
 
@@ -240,10 +235,6 @@ function buildConfirmationEmailHtml(payload) {
     html.push('</div>');
   }
 
-  var closingMessage = hasAnyAttendingResponse(payload)
-    ? 'We look forward to celebrating with you!'
-    : "We'll miss you but you'll be with us in spirit!";
-  html.push('<p style="margin:10px 0 0;color:#5f4448;">' + escapeHtml(closingMessage) + '</p>');
   html.push('</div>');
   html.push('</body></html>');
   return html.join('');
@@ -291,23 +282,6 @@ function buildEventSummaryForEmail(payload) {
   });
 
   return summaries;
-}
-
-function hasAnyAttendingResponse(payload) {
-  var guests = (payload && Array.isArray(payload.guests)) ? payload.guests : [];
-
-  for (var i = 0; i < guests.length; i++) {
-    var rsvps = (guests[i] && guests[i].rsvps) ? guests[i].rsvps : {};
-    for (var j = 0; j < RESPONSE_EVENT_COLUMNS.length; j++) {
-      var eventName = RESPONSE_EVENT_COLUMNS[j];
-      var response = String(rsvps[eventName] || '').trim().toLowerCase();
-      if (response === 'attending') {
-        return true;
-      }
-    }
-  }
-
-  return false;
 }
 
 function isWeddingEventName(eventName) {
