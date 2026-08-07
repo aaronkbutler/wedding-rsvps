@@ -16,8 +16,8 @@ var MEAL_OPTIONS = ['Apricot Glazed Salmon (gluten-free)', 'Wild Mushroom Strude
 var SEND_CONFIRMATION_EMAILS = true;
 
 // Confirmation email settings.
-var CONFIRMATION_EMAIL_SUBJECT = 'Your Wedding RSVP Confirmation';
-var CONFIRMATION_EMAIL_SENDER_NAME = 'Kriegel and Butler Wedding';
+var CONFIRMATION_EMAIL_SUBJECT = 'Raquel and Aaron's Wedding RSVP Confirmation';
+var CONFIRMATION_EMAIL_SENDER_NAME = 'Raquel and Aaron';
 var WEDDING_WEBSITE_URL = 'https://raquelandaaron.com';
 
 var EVENT_DISPLAY_NAMES = {
@@ -58,7 +58,7 @@ var ADDITIONAL_GUESTS_COLUMN = 'additional guests';
 
 var RESPONSE_FIXED_COLUMNS = ['Timestamp', 'GuestID', 'GuestName', 'InvitationGroup'];
 var RESPONSE_EVENT_COLUMNS = ['Fri night', 'Saturday', 'Sunday'];
-var RESPONSE_TRAILING_COLUMNS = ['MealChoice', 'HospitalityNeeded', 'Message'];
+var RESPONSE_TRAILING_COLUMNS = ['Email', 'MealChoice', 'HospitalityNeeded', 'Message'];
 
 function doGet(e) {
   try {
@@ -186,7 +186,7 @@ function buildConfirmationEmailText(payload) {
 
   lines.push('');
   lines.push(hasAnyAttendingResponse(payload)
-    ? 'We look forward to celebrating with you.'
+    ? 'We look forward to celebrating with you!'
     : "We'll miss you but you'll be with us in spirit!");
 
   return lines.join('\n');
@@ -241,7 +241,7 @@ function buildConfirmationEmailHtml(payload) {
   }
 
   var closingMessage = hasAnyAttendingResponse(payload)
-    ? 'We look forward to celebrating with you.'
+    ? 'We look forward to celebrating with you!'
     : "We'll miss you but you'll be with us in spirit!";
   html.push('<p style="margin:10px 0 0;color:#5f4448;">' + escapeHtml(closingMessage) + '</p>');
   html.push('</div>');
@@ -703,6 +703,7 @@ function submitRsvp(payload) {
   var guestIdCol = existingHeader.indexOf('GuestID');
 
   var now = new Date();
+  var submittedEmail = payload.email || '';
   var message = payload.message || '';
 
   payload.guests.forEach(function (guestRsvp) {
@@ -718,6 +719,7 @@ function submitRsvp(payload) {
       if (colIndex !== -1) row[colIndex] = response;
     });
 
+    row[header.indexOf('Email')] = submittedEmail;
     row[header.indexOf('MealChoice')] = guestRsvp.mealChoice || '';
     row[header.indexOf('HospitalityNeeded')] = guestRsvp.hospitalityNeeded || '';
     row[header.indexOf('Message')] = message;
