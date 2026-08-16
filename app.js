@@ -66,19 +66,90 @@ function setMessage(el, text, type, isHtml) {
   if (type) el.classList.add(type);
 }
 
+function logDebug(label, payload) {
+  console.log('[wedding-rsvps]', label, payload);
+}
+
+function logError(label, payload) {
+  console.error('[wedding-rsvps]', label, payload);
+}
+
 function apiGet(params) {
   const url = new URL(APPS_SCRIPT_URL);
   Object.keys(params).forEach((key) => url.searchParams.set(key, params[key]));
-  return fetch(url.toString()).then((res) => res.json());
+
+  logDebug('GET request', { url: url.toString(), params });
+
+  return fetch(url.toString())
+    .then(async (res) => {
+      const responseText = await res.text();
+      logDebug('GET response', {
+        status: res.status,
+        ok: res.ok,
+        url: url.toString(),
+        body: responseText.slice(0, 2000)
+      });
+
+      try {
+        return JSON.parse(responseText);
+      } catch (err) {
+        logError('GET response was not valid JSON', {
+          status: res.status,
+          url: url.toString(),
+          body: responseText.slice(0, 2000),
+          error: err
+        });
+        throw new Error('Server returned a non-JSON response.');
+      }
+    })
+    .catch((err) => {
+      logError('GET request failed', {
+        url: url.toString(),
+        error: err
+      });
+      throw err;
+    });
 }
 
 function apiPost(payload) {
   // Sent as text/plain to avoid a CORS preflight request against Apps Script.
+  const requestBody = JSON.stringify(payload);
+  logDebug('POST request', {
+    url: APPS_SCRIPT_URL,
+    payload
+  });
+
   return fetch(APPS_SCRIPT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(payload)
-  }).then((res) => res.json());
+    body: requestBody
+  }).then(async (res) => {
+    const responseText = await res.text();
+    logDebug('POST response', {
+      status: res.status,
+      ok: res.ok,
+      url: APPS_SCRIPT_URL,
+      body: responseText.slice(0, 2000)
+    });
+
+    try {
+      return JSON.parse(responseText);
+    } catch (err) {
+      logError('POST response was not valid JSON', {
+        status: res.status,
+        url: APPS_SCRIPT_URL,
+        body: responseText.slice(0, 2000),
+        error: err
+      });
+      throw new Error('Server returned a non-JSON response.');
+    }
+  }).catch((err) => {
+    logError('POST request failed', {
+      url: APPS_SCRIPT_URL,
+      error: err
+    });
+    throw err;
+  });
 }
 
 function resetSections() {
@@ -138,6 +209,7 @@ async function handleSearch() {
 
   try {
     const result = await apiGet({ action: 'search', name });
+    logDebug('Search result', result);
 
     if (result.error) {
       setMessage(searchMessage, result.error, 'error');
@@ -158,6 +230,11 @@ async function handleSearch() {
     setMessage(searchMessage, '');
     showInvitation(result);
   } catch (err) {
+    logError('Name lookup failed', {
+      name,
+      error: err,
+      stack: err && err.stack
+    });
     setMessage(searchMessage, 'Something went wrong. Please try again later.', 'error');
   } finally {
     searchButton.disabled = false;
@@ -184,6 +261,8 @@ async function selectOption(groupName) {
 
   try {
     const result = await apiGet({ action: 'byGroup', group: groupName });
+    logDebug('Group lookup result', result);
+
     if (result.error || !result.invitationGroup) {
       setMessage(searchMessage, 'Unable to resolve your invitation. Please contact us directly.', 'error');
       return;
@@ -191,6 +270,11 @@ async function selectOption(groupName) {
     setMessage(searchMessage, '');
     showInvitation(result);
   } catch (err) {
+    logError('Group lookup failed', {
+      groupName,
+      error: err,
+      stack: err && err.stack
+    });
     setMessage(searchMessage, 'Something went wrong. Please try again later.', 'error');
   }
 }
