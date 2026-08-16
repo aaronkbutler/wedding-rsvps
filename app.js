@@ -1,5 +1,5 @@
-// Paste the deployed Google Apps Script Web App URL here (ends in /exec).
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw2tfP_tJIYvGfMAT9I66gzYngFp0s5NZPUVBFZ3gBnDbwk1LeIHTtxc1II7nmb5BS1QQ/exec';
+// Paste your deployed backend URL here (Apps Script /exec or Cloud Run service URL).
+const APPS_SCRIPT_URL = 'https://wedding-rsvps-backend-65jbes4yra-uc.a.run.app/';
 
 // Maps raw event column headers from the Google Sheet to user-friendly display names.
 const EVENT_DISPLAY_NAMES = {

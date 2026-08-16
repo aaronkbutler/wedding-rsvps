@@ -16,6 +16,26 @@ responses are saved to a Google Sheet.
   Sheet. It reads the guest list and writes RSVP responses, so there's no
   separate server to host or maintain.
 
+## Optional: Cloud Run backend (recommended)
+
+If you want to avoid Apps Script reauthorization issues, use the Cloud Run
+backend in `backend/`.
+
+- It preserves the same API contract used by `app.js`:
+   - `GET /?action=search&name=...`
+   - `GET /?action=byGroup&group=...`
+   - `POST /` with the same RSVP payload
+- It reads/writes your same Google Sheet tabs (`Guests` and `Responses`).
+
+Quick migration:
+
+1. Follow deployment steps in [`backend/README.md`](./backend/README.md).
+2. Set the deployed Cloud Run service URL in `app.js` as `APPS_SCRIPT_URL`.
+3. Redeploy/republish your static frontend.
+
+`Code.gs` can remain in the repo for reference, but is no longer required
+once Cloud Run is live.
+
 ## 1. Set up the Google Sheet
 
 Create a new Google Sheet with two tabs:
