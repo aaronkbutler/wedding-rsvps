@@ -648,6 +648,22 @@ function handleLoginSubmit() {
   postPasswordToParent(password);
 }
 
+function initializeFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const startParam = String(params.get('start') || '').trim().toLowerCase();
+  const hash = String(window.location.hash || '').replace(/^#/, '').trim().toLowerCase();
+  const startTarget = startParam || hash;
+
+  if (startTarget === 'rsvp' || startTarget === 'search') {
+    handleRsvpButton();
+    return;
+  }
+
+  if (startTarget === 'login') {
+    handleLoginButton();
+  }
+}
+
 rsvpButton.addEventListener('click', handleRsvpButton);
 loginButton.addEventListener('click', handleLoginButton);
 loginSubmitButton.addEventListener('click', handleLoginSubmit);
@@ -662,3 +678,5 @@ rsvpForm.addEventListener('submit', handleSubmit);
 continueButton.addEventListener('click', handleContinue);
 loginBackButton.addEventListener('click', handleBackToLanding);
 searchBackButton.addEventListener('click', handleBackToLanding);
+
+initializeFromUrl();
