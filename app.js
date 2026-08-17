@@ -14,6 +14,16 @@ const EVENT_DESCRIPTIONS = {
   'sunday': 'Ceremony and reception at Temple Emanuel - 385 Ward Street, Newton, MA 02459',
 };
 
+const VALID_WEDDING_PASSWORDS = new Set(['shippinguptoboston', 'wearefamily', 'beantown']);
+
+function normalizePassword(password) {
+  return String(password || '').trim().toLowerCase();
+}
+
+function isValidWeddingPassword(password) {
+  return VALID_WEDDING_PASSWORDS.has(normalizePassword(password));
+}
+
 function displayEventName(eventName) {
   return EVENT_DISPLAY_NAMES[eventName.toLowerCase()] || eventName;
 }
@@ -619,7 +629,12 @@ function handleContinue() {
   // parent window; the Wix page code must listen for it with
   // $w('#htmlElementId').onMessage(...) and call submitPassword() itself.
   // See README.md "Embed in Wix" for the corresponding Velo snippet.
-  postPasswordToParent(lastWebsitePassword);
+  if (!isValidWeddingPassword(lastWebsitePassword)) {
+    setMessage(submitMessage, 'Unable to continue because a valid website password is not available.', 'error');
+    return;
+  }
+
+  postPasswordToParent(normalizePassword(lastWebsitePassword));
 }
 
 function handleRsvpButton() {
@@ -640,12 +655,20 @@ function handleBackToLanding() {
 }
 
 function handleLoginSubmit() {
-  const password = loginPasswordInput.value.trim();
-  if (!password) {
+  const enteredPassword = loginPasswordInput.value.trim();
+  if (!enteredPassword) {
     setMessage(loginMessage, 'Please enter a password.', 'error');
     return;
   }
-  postPasswordToParent(password);
+
+  const normalizedPassword = normalizePassword(enteredPassword);
+  if (!isValidWeddingPassword(normalizedPassword)) {
+    setMessage(loginMessage, 'That password was not recognized. Please check your RSVP email and try again.', 'error');
+    return;
+  }
+
+  setMessage(loginMessage, '');
+  postPasswordToParent(normalizedPassword);
 }
 
 function initializeFromUrl() {

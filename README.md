@@ -148,6 +148,16 @@ Any static host works. The simplest option is GitHub Pages:
    import { local } from '@wix/site-storage';
    import wixLocationFrontend from 'wix-location-frontend';
 
+    const VALID_WEDDING_PASSWORDS = new Set([
+       'shippinguptoboston',
+       'wearefamily',
+       'beantown'
+    ]);
+
+    function normalizePassword(password) {
+       return String(password || '').trim().toLowerCase();
+    }
+
    $w.onReady(function () {
      $w('#html1').onMessage((event) => {
        if (event.data && event.data.type === 'wedding-rsvp-continue') {
@@ -157,10 +167,13 @@ Any static host works. The simplest option is GitHub Pages:
    });
 
    function submitPassword(websitePassword) {
-     if (websitePassword) {
-       local.setItem('userPassword', websitePassword);
-     }
-     wixLocationFrontend.to('/');
+       const normalizedPassword = normalizePassword(websitePassword);
+       if (!VALID_WEDDING_PASSWORDS.has(normalizedPassword)) {
+          return;
+       }
+
+       local.setItem('userPassword', normalizedPassword);
+       wixLocationFrontend.to('/');
    }
    ```
 
